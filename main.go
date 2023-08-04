@@ -20,9 +20,12 @@ func main() {
 		Level: compress.LevelBestSpeed,
 	}))
 
-	app.Static("/code/", "./docker/volumes/code")
+	rb := NewRingBuffer(20000)
+	app.Static("/code/", "./code")
 
-	// Log Output-er
+	err := cloneRepo("https://github.com/heroku/node-js-getting-started", "./code")
+	if err != nil {
+	}
 
 	// POST Static Resources
 	app.Post("/code/+", func(ctx *fiber.Ctx) error {
@@ -65,37 +68,22 @@ func main() {
 		return ctx.SendString("File successfully uploaded and extracted.")
 	})
 
-	app.Post("/clone", func(ctx *fiber.Ctx) error {
-		type Payload struct {
-			RepoURL string `json:"repo_url"`
-		}
-		var p Payload
-		if err := ctx.BodyParser(&p); err != nil {
-			return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
-		}
-
-		// Clone the repo
-		if err := cloneRepo(p.RepoURL, "./temp_repo"); err != nil {
-			rb.Add("Failed to clone: " + err.Error())
-			return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
-		}
-		rb.Add("Repo cloned successfully!")
-
-		// Build the Docker image
-		if err := buildDockerImage("./temp_repo", "my_image_name"); err != nil {
-			rb.Add("Failed to build Docker image: " + err.Error())
-			return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
-		}
-		rb.Add("Docker image built successfully!")
-
-		return ctx.SendString("Done!")
-	})
+	//app.Post("/clone", func(ctx *fiber.Ctx) error {
+	//	// Clone the repo
+	//
+	//
+	//	// Build the Docker image
+	//	if err := buildDockerImage("./temp_repo", "swizzle_dev"); err != nil {
+	//		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	//	}
+	//
+	//	return ctx.SendString("Done!")
+	//})
 
 	// Endpoint to fetch the logs
 	app.Get("/logs", func(ctx *fiber.Ctx) error {
 		return ctx.JSON(rb.Get())
 	})
-
 }
 
 // GetLogs return logs from the container io.ReadCloser. It's the caller duty
