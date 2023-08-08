@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -84,6 +85,8 @@ func main() {
 	app.Get("/logs", func(ctx *fiber.Ctx) error {
 		return ctx.JSON(rb.Get())
 	})
+
+	log.Fatal(app.Listen(":3000"))
 }
 
 // GetLogs return logs from the container io.ReadCloser. It's the caller duty
