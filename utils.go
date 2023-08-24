@@ -25,6 +25,9 @@ func downloadFileFromURL(url string, destination string) error {
 }
 
 func runDockerCompose() error {
-	cmd := exec.Command("docker-compose", "up", "-d")
-	return cmd.Run()
+	down := exec.Command("docker", "compose", "down")
+	_ = down.Run()
+
+	up := exec.Command("docker", "compose", "up", "-d")
+	return up.Run()
 }

@@ -18,16 +18,16 @@ func main() {
 		log.Fatalf("Failed to run docker-compose: %v", err)
 	}
 
-	http.Handle("/editor/", proxyPass("8080"))
+	http.Handle("/editor/", theiaProxy("8080"))
 	http.Handle("/runner/", proxyPass("4411"))
 	http.Handle("/database/", proxyPass("27017"))
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":1234",
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Println("Starting server on :8080")
+	log.Println("Starting server on :1234")
 	server.ListenAndServe()
 }
