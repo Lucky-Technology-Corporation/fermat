@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -44,4 +45,16 @@ func directoryExists(path string) (bool, error) {
 		return false, err
 	}
 	return info.IsDir(), nil
+}
+
+// executeGitCommand is a utility function to execute a git command and handle errors
+func executeGitCommand(dir string, args ...string) bool {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Git command failed: %s\nOutput: %s", err, out)
+		return false
+	}
+	return true
 }

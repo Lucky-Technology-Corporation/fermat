@@ -112,7 +112,7 @@ func main() {
 		body, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
-		commitMessage := fmt.Sprintf("swizzle commit %s", time.Now().Format(time.RFC3339))
+		commitMessage := fmt.Sprintf("swizzle commit: %s", time.Now().Format(time.RFC3339))
 
 		if err == nil && len(body) > 0 {
 			var req CommitRequest
@@ -134,7 +134,31 @@ func main() {
 	})
 
 	http.HandleFunc("/push_to_production", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
+		// Commit changes on the current branch
+		commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
+		cmd := exec.Command("git", "commit", "-a", "-m", commitMessage) // '-a' adds all changes
+		cmd.Dir = "/code"
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Push changes to the 'production' branch on the remote
+		cmd = exec.Command("git", "push", "origin", "HEAD:production")
+		cmd.Dir = "/code"
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to push to production: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "Pushed to production successfully: %s", out)
 	})
 
 	http.HandleFunc("/code/table_of_contents", func(w http.ResponseWriter, r *http.Request) {
