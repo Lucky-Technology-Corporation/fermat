@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -90,6 +91,50 @@ func main() {
 		if err != nil {
 			http.Error(w, "Failed to write file content", http.StatusInternalServerError)
 		}
+	})
+
+	// CommitRequest represents the structure of the request body
+	type CommitRequest struct {
+		CommitMessage string `json:"commit_message"`
+	}
+
+	http.HandleFunc("/commit", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if r.ContentLength > 4096 { // 4KB
+			http.Error(w, "Request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+
+		body, err := io.ReadAll(r.Body)
+		defer r.Body.Close()
+
+		commitMessage := fmt.Sprintf("swizzle commit %s", time.Now().Format(time.RFC3339))
+
+		if err == nil && len(body) > 0 {
+			var req CommitRequest
+			if json.Unmarshal(body, &req) == nil && req.CommitMessage != "" {
+				commitMessage = req.CommitMessage
+			}
+		}
+
+		cmd := exec.Command("git", "commit", "-m", commitMessage)
+		cmd.Dir = "/code"
+		out, err := cmd.CombinedOutput()
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "Commit successful: %s", out)
+	})
+
+	http.HandleFunc("/push_to_production", func(w http.ResponseWriter, r *http.Request) {
+
 	})
 
 	http.HandleFunc("/code/table_of_contents", func(w http.ResponseWriter, r *http.Request) {
