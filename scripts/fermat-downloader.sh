@@ -5,10 +5,9 @@ export GOOGLE_APPLICATION_CREDENTIALS="/home/swizzle_prod_user/.config/gcloud/ap
 GCS_URL="https://storage.cloud.google.com/swizzle_scripts/fermat"
 TOKEN=$(gcloud auth print-access-token)
 
-curl -H "Authorization: Bearer $TOKEN" -o fermat-linux "$GCS_URL"
-
-if [ $? -eq 0 ]; then
+if curl -H "Authorization: Bearer $TOKEN" -o fermat-linux "$GCS_URL"; then
     echo "Download successful!"
 else
     echo "Download failed!"
 fi
+
