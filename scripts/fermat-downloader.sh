@@ -10,4 +10,3 @@ if curl -H "Authorization: Bearer $TOKEN" -o fermat-linux "$GCS_URL"; then
 else
     echo "Download failed!"
 fi
-
