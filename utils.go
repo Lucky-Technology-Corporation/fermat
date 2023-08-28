@@ -1,6 +1,9 @@
 package main
 
 import (
+	"cloud.google.com/go/storage"
+	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -57,4 +60,45 @@ func executeGitCommand(dir string, args ...string) bool {
 		return false
 	}
 	return true
+}
+
+// downloadFileFromGoogleBucket is a quick downloader script to grab the docker compose and any other deps
+func downloadFileFromGoogleBucket(bucketName, objectName string) ([]byte, error) {
+	ctx := context.Background()
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to create client: %v", err)
+	}
+	defer client.Close()
+
+	bucket := client.Bucket(bucketName)
+	obj := bucket.Object(objectName)
+
+	r, err := obj.NewReader(ctx)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to read object: %v", err)
+	}
+	defer r.Close()
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to read data: %v", err)
+	}
+
+	return data, nil
+}
+
+// SaveBytesToFile saves a given []byte to a specified filename.
+func saveBytesToFile(filename string, data []byte) error {
+	// Create or truncate the file
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write the data to the file
+	_, err = file.Write(data)
+	return err
 }

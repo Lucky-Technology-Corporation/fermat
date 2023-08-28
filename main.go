@@ -26,10 +26,14 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	downloadURL := "https://storage.googleapis.com/swizzle_scripts_pub/docker-compose.yaml"
-	err := downloadFileFromURL(downloadURL, "docker-compose.yaml")
+	data, err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml")
 	if err != nil {
-		log.Fatalf("Failed to download docker-compose file: %v", err)
+		log.Fatalf("failed to download docker-compose file: %s", err)
+	}
+
+	err = saveBytesToFile("docker-compose.yaml", data)
+	if err != nil {
+		log.Fatalf("failed to save docker-compose.yaml to disk: %s", err)
 	}
 
 	repoExists, err := directoryExists("code")
@@ -56,7 +60,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		cmd = exec.Command("git clone ssh://sean@useblade.com@source.developers.google.com:2022/p/swizzle-prod/r/swizzle-webserver-template code")
+		cmd = exec.Command("git clone ssh://fermat-sa@swizzle-prod.iam.gserviceaccount.com@source.developers.google.com:2022/p/swizzle-prod/r/swizzle-webserver-template code")
 		if err := cmd.Run(); err != nil {
 			log.Fatal(err)
 		}
