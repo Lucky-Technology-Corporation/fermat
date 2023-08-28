@@ -7,6 +7,7 @@ import (
 	"os/exec"
 )
 
+// downloadFileFromURL downloads the given file to the local file system
 func downloadFileFromURL(url string, destination string) error {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -24,10 +25,23 @@ func downloadFileFromURL(url string, destination string) error {
 	return err
 }
 
+// runDockerCompose runs `docker compose down` and `docker compose up -d`
 func runDockerCompose() error {
 	down := exec.Command("docker", "compose", "down")
 	_ = down.Run()
 
 	up := exec.Command("docker", "compose", "up", "-d")
 	return up.Run()
+}
+
+// directoryExists checks if a directory exists at the given path
+func directoryExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return info.IsDir(), nil
 }
