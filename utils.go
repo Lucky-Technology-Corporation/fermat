@@ -66,6 +66,8 @@ func executeGitCommand(dir string, args ...string) bool {
 func downloadFileFromGoogleBucket(bucketName, objectName string) ([]byte, error) {
 	ctx := context.Background()
 
+	log.Println("... creating google bucket connection ...")
+
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return []byte{}, fmt.Errorf("failed to create client: %v", err)
@@ -75,11 +77,15 @@ func downloadFileFromGoogleBucket(bucketName, objectName string) ([]byte, error)
 	bucket := client.Bucket(bucketName)
 	obj := bucket.Object(objectName)
 
+	log.Println("... set object ...")
+
 	r, err := obj.NewReader(ctx)
 	if err != nil {
 		return []byte{}, fmt.Errorf("failed to read object: %v", err)
 	}
 	defer r.Close()
+
+	log.Println("... pulling object ...")
 
 	data, err := io.ReadAll(r)
 	if err != nil {

@@ -8,72 +8,94 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
-func handleGetRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Handle the GET request
-	query := r.URL.Query().Get("query")
-	response := fmt.Sprintf("Received query: %s", query)
-	w.Write([]byte(response))
-}
-
 func main() {
+	defer recoverAndRestart() // If the program panics, this will attempt to restart it.
+
 	log.SetOutput(os.Stdout)
+	log.Println("========================================")
+	log.Println("Initializing fermat...")
+
+	log.Println("[Step 1] Downloading docker-compose file...")
 	data, err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml")
 	if err != nil {
-		log.Fatalf("failed to download docker-compose file: %s", err)
+		log.Fatalf("[Error] Failed to download docker-compose file: %s", err)
 	}
 
+	log.Println("[Step 2] Saving docker-compose.yaml to disk...")
 	err = saveBytesToFile("docker-compose.yaml", data)
 	if err != nil {
-		log.Fatalf("failed to save docker-compose.yaml to disk: %s", err)
+		log.Fatalf("[Error] Failed to save docker-compose.yaml to disk: %s", err)
 	}
 
+	log.Println("[Step 3] Checking if repository exists...")
 	repoExists, err := directoryExists("code")
+	if !repoExists || err != nil {
+		log.Println("[Step 4] Configuring Git...")
+		gitSetup()
 
-	// configure git, clone repo only if needed
-	if repoExists == false || err != nil {
-		gitUsername := os.Getenv("GIT_USERNAME")
-		if gitUsername == "" {
-			gitUsername = "Swizzle User"
-		}
-
-		gitEmail := os.Getenv("GIT_EMAIL")
-		if gitEmail == "" {
-			gitEmail = "default@swizzle.co"
-		}
-
-		cmd := exec.Command("git config --global user.name \"%s\"", gitUsername)
-		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		cmd = exec.Command("git config --global user.email \"%s\"", gitEmail)
-		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		cmd = exec.Command("git clone ssh://fermat-sa@swizzle-prod.iam.gserviceaccount.com@source.developers.google.com:2022/p/swizzle-prod/r/swizzle-webserver-template code")
-		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
-		}
+		log.Println("[Step 5] Cloning repository...")
+		gitCloneRepo()
 	}
 
-	// docker compose down -> up (reset if already running, otherwise start)
+	log.Println("[Step 6] Running docker-compose...")
 	err = runDockerCompose()
 	if err != nil {
-		log.Fatalf("Failed to run docker-compose: %v", err)
+		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	// reverse proxy, rewriter
+	log.Println("[Step 7] Setting up HTTP server...")
+	setupHTTPServer()
+
+	log.Println("========================================")
+	log.Println("Fermat is now running!")
+}
+
+// recoverAndRestart will attempt to recover from a panic and restart the program.
+func recoverAndRestart() {
+	if r := recover(); r != nil {
+		log.Println("[Fatal Error] Program crashed with error:", r)
+		log.Println("Attempting to restart...")
+
+		exec.Command(os.Args[0]).Run()
+	}
+}
+
+// gitSetup configures git with the given username and email.
+func gitSetup() {
+	gitUsername := os.Getenv("GIT_USERNAME")
+	if gitUsername == "" {
+		gitUsername = "Swizzle User"
+	}
+
+	gitEmail := os.Getenv("GIT_EMAIL")
+	if gitEmail == "" {
+		gitEmail = "default@swizzle.co"
+	}
+
+	cmd := exec.Command("git", "config", "--global", "user.name", gitUsername)
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+
+	cmd = exec.Command("git", "config", "--global", "user.email", gitEmail)
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// gitCloneRepo clones the desired repository.
+func gitCloneRepo() {
+	cmd := exec.Command("git", "clone", "ssh://fermat-sa@swizzle-prod.iam.gserviceaccount.com@source.developers.google.com:2022/p/swizzle-prod/r/swizzle-webserver-template", "code")
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// setupHTTPServer sets up the necessary HTTP routes and starts the server.
+func setupHTTPServer() {
 	http.Handle("/editor/", theiaProxy("8080"))
 	http.Handle("/runner/", proxyPass("4411"))
 	http.Handle("/database/", proxyPass("27017"))
@@ -82,16 +104,20 @@ func main() {
 	http.HandleFunc("/code/package.json", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Not Found", http.StatusNotFound)
+			return
 		}
 
-		file, err := os.Open("code/package.json") // Replace with your filename
+		file, err := os.Open("code/package.json")
 		if err != nil {
 			http.Error(w, "Failed to open file", http.StatusNotFound)
 			return
 		}
-		defer file.Close()
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				log.Printf("Failed to close file: %v", cerr)
+			}
+		}()
 
-		// Write the file contents to the response
 		_, err = io.Copy(w, file)
 		if err != nil {
 			http.Error(w, "Failed to write file content", http.StatusInternalServerError)
@@ -104,7 +130,7 @@ func main() {
 	}
 
 	http.HandleFunc("/commit", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 			return
 		}
@@ -118,7 +144,6 @@ func main() {
 		defer r.Body.Close()
 
 		commitMessage := fmt.Sprintf("swizzle commit: %s", time.Now().Format(time.RFC3339))
-
 		if err == nil && len(body) > 0 {
 			var req CommitRequest
 			if json.Unmarshal(body, &req) == nil && req.CommitMessage != "" {
@@ -127,85 +152,41 @@ func main() {
 		}
 
 		cmd := exec.Command("git", "commit", "-m", commitMessage)
-		cmd.Dir = "/code"
+		cmd.Dir = "code"
 		out, err := cmd.CombinedOutput()
-
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Fprintf(w, "Commit successful: %s", out)
+		fmt.Fprintf(w, "Commit successful: %s", string(out))
 	})
 
 	http.HandleFunc("/push_to_production", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Commit changes on the current branch
 		commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
 		cmd := exec.Command("git", "commit", "-a", "-m", commitMessage) // '-a' adds all changes
-		cmd.Dir = "/code"
+		cmd.Dir = "code"
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		// Push changes to the 'production' branch on the remote
-		cmd = exec.Command("git", "push", "origin", "HEAD:production")
-		cmd.Dir = "/code"
+		cmd = exec.Command("git", "push", "origin", "production")
+		cmd.Dir = "code"
 		out, err = cmd.CombinedOutput()
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to push to production: %s", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Failed to push: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Fprintf(w, "Pushed to production successfully: %s", out)
+		fmt.Fprintf(w, "Push successful: %s", string(out))
 	})
 
-	http.HandleFunc("/code/table_of_contents", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Not Found", http.StatusNotFound)
-		}
-
-		root := "./code" // start at the directory you want
-
-		var files []string
-		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() { // We only want to collect file names, not directory names
-				relativePath := strings.TrimPrefix(path, root)
-				files = append(files, relativePath)
-			}
-			return nil
-		})
-
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error walking the directory: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		for _, file := range files {
-			fmt.Fprintln(w, file)
-		}
-	})
-
-	server := &http.Server{
-		Addr:         ":1234",
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	log.Println("Starting server on :1234")
-	err = server.ListenAndServe()
-	if err != nil {
-		log.Fatalf("server failure: %s", err)
-		return
-	}
+	http.ListenAndServe(":1234", nil)
 }
