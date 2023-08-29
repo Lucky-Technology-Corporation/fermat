@@ -26,6 +26,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	log.SetOutput(os.Stdout)
 	data, err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml")
 	if err != nil {
 		log.Fatalf("failed to download docker-compose file: %s", err)
