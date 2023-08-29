@@ -32,13 +32,15 @@ else
 fi
 
 # Cloning from Google Cloud Source Repositories
-echo "[INFO] Attempting to clone 'swizzle-webserver-template' from Google Cloud Source Repositories..."
 REPO_DIR="$HOME/code"
+REPO_NAME="swizzle-webserver-template"
+
+echo "[INFO] Attempting to clone '$REPO_NAME' from Google Cloud Source Repositories..."
 mkdir -p "$REPO_DIR"
-if gcloud source repos clone swizzle-webserver-template "$REPO_DIR" --project=swizzle-prod --quiet; then
-    echo "[SUCCESS] 'swizzle-webserver-template' has been successfully cloned to $REPO_DIR."
+if gcloud source repos clone $REPO_NAME "$REPO_DIR" --project=swizzle-prod --quiet; then
+    echo "[SUCCESS] '$REPO_NAME' has been successfully cloned to $REPO_DIR."
 else
-    echo "[ERROR] Failed to clone 'swizzle-webserver-template'."
+    echo "[ERROR] Failed to clone '$REPO_NAME'."
     exit 1
 fi
 
