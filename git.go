@@ -140,11 +140,6 @@ func commitPushHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	CheckIfError(w, err)
 
-	if err := pushWithGcloud("master"); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	err = workTree.Checkout(&git.CheckoutOptions{
 		Branch: "refs/heads/production",
 	})
