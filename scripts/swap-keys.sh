@@ -1,30 +1,40 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <path-to-git-repo> <new-remote-url>"
+# Check if the correct number of arguments is provided
+# Expecting the base64 encoded string of the new service account key as an argument
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <base64-encoded-service-account-key>"
     exit 1
 fi
 
-REPO_PATH=$1
-NEW_REMOTE_URL=$2
+ENCODED_KEY=$1
+DEFAULT_CREDENTIALS_PATH="$HOME/.config/gcloud/application_default_credentials.json"
+TEMP_KEY_PATH="/tmp/temp_service_account_key.json"
 
-cd "$REPO_PATH" || { echo "Error: Failed to change to directory $REPO_PATH."; exit 2; }
+echo "Decoding the base64 encoded service account key..."
+echo "$ENCODED_KEY" | base64 -d > "$TEMP_KEY_PATH"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to decode the base64 string."
+    exit 2
+fi
 
-if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-    echo "Error: The directory $REPO_PATH is not a git repository."
+echo "Replacing the application_default_credentials.json file..."
+if cp "$TEMP_KEY_PATH" "$DEFAULT_CREDENTIALS_PATH"; then
+    echo "Successfully replaced the application_default_credentials.json file."
+else
+    echo "Error: Failed to replace the application_default_credentials.json file."
+    rm -f "$TEMP_KEY_PATH"
     exit 3
 fi
 
-echo "Checking current remote settings in $REPO_PATH..."
-git remote -v
+echo "Authenticating with the new service account key..."
+if gcloud auth activate-service-account --key-file="$TEMP_KEY_PATH"; then
+    echo "Successfully authenticated with the new service account key."
+else
+    echo "Error: Failed to authenticate with the new service account key."
+    rm -f "$TEMP_KEY_PATH"
+    exit 4
+fi
 
-echo "Removing current remote 'origin'..."
-git remote remove origin
-
-echo "Adding new remote 'origin' with URL: $NEW_REMOTE_URL..."
-git remote add origin "$NEW_REMOTE_URL"
-
-echo "New remote settings:"
-git remote -v
-
-echo "Remote changed successfully!"
+rm -f "$TEMP_KEY_PATH"
+echo "gcloud auth configuration updated successfully!"
