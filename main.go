@@ -63,37 +63,6 @@ func recoverAndRestart() {
 	}
 }
 
-// gitSetup configures git with the given username and email.
-func gitSetup() {
-	gitUsername := os.Getenv("GIT_USERNAME")
-	if gitUsername == "" {
-		gitUsername = "Swizzle User"
-	}
-
-	gitEmail := os.Getenv("GIT_EMAIL")
-	if gitEmail == "" {
-		gitEmail = "default@swizzle.co"
-	}
-
-	cmd := exec.Command("git", "config", "--global", "user.name", gitUsername)
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
-	}
-
-	cmd = exec.Command("git", "config", "--global", "user.email", gitEmail)
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// gitCloneRepo clones the desired repository.
-func gitCloneRepo() {
-	cmd := exec.Command("git", "clone", "ssh://fermat-sa@swizzle-prod.iam.gserviceaccount.com@source.developers.google.com:2022/p/swizzle-prod/r/swizzle-webserver-template", "code")
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
-	}
-}
-
 // setupHTTPServer sets up the necessary HTTP routes and starts the server.
 func setupHTTPServer() {
 	http.Handle("/editor/", theiaProxy("8080"))
