@@ -30,7 +30,7 @@ echo "[SUCCESS] Access token fetched successfully."
 GCS_URL="https://storage.googleapis.com/swizzle_scripts/fermat-linux"
 echo "[INFO] Attempting to download from $GCS_URL..."
 HTTP_RESPONSE=$(curl -L -H "Authorization: Bearer $ACCESS_TOKEN" -o fermat-linux "$GCS_URL" -w '%{http_code}' -s)
-if [ "$HTTP_RESPONSE" == "200" ]; then
+if [ "$HTTP_RESPONSE" = "200" ]; then
     echo "[SUCCESS] Download successful!"
     chmod +x fermat-linux
     echo "[INFO] The file 'fermat-linux' has been made executable."
