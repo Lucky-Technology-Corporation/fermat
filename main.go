@@ -20,42 +20,30 @@ func main() {
 	log.Println("Initializing fermat...")
 
 	log.Println("[Step 1] Downloading docker-compose file...")
-	dockerData, err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml")
+	err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml", "docker-compose.yaml")
 	if err != nil {
-		log.Fatalf("[Error] Failed to download docker-compose file: %s", err)
+		log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
 	}
 
-	log.Println("[Step 2] Saving docker-compose.yaml to disk...")
-	err = saveBytesToFile("docker-compose.yaml", dockerData)
+	log.Println("[Step 2] Downloading pascal (theia) docker image")
+	err := downloadFileFromGoogleBucket("swizzle_scripts", "pascal.tar", "pascal.tar")
 	if err != nil {
-		log.Fatalf("[Error] Failed to save docker-compose.yaml to disk: %s", err)
+		log.Fatalf("[Error] Failed to download and save pascal tarball (theia): %s", err)
 	}
 
-	log.Println("[Step 3] Downloading pascal (theia) docker image")
-	pascalData, err := downloadFileFromGoogleBucket("swizzle_scripts", "pascal.tar")
-	if err != nil {
-		log.Fatalf("[Error] Failed to download pascal tarball (theia): %s", err)
-	}
-
-	log.Println("[Step 4] Saving pascal to disk...")
-	err = saveBytesToFile("pascal.tar", pascalData)
-	if err != nil {
-		log.Fatalf("[Error] Failed to save docker-compose.yaml to disk: %s", err)
-	}
-
-	log.Println("[Step 5] Load docker image from tarball")
+	log.Println("[Step 3] Load docker image from tarball")
 	err = loadDockerImageFromTarball("pascal.tar")
 	if err != nil {
 		log.Fatalf("[Error] Failed to load docker tarball: %s", err)
 	}
 
-	log.Println("[Step 5] Running docker compose...")
+	log.Println("[Step 4] Running docker compose...")
 	err = runDockerCompose()
 	if err != nil {
 		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	log.Println("[Step 6] Setting up HTTP server...")
+	log.Println("[Step 5] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
 	signals := make(chan os.Signal, 1)
