@@ -1,6 +1,6 @@
 steps:
   # Set up Go environment and build the Go application
-  - name: 'golang:1.17'
+  - name: 'golang:1.21'
     entrypoint: 'bash'
     args: ['-c', 'GOOS=linux GOARCH=amd64 go build -o fermat-linux .']
 
