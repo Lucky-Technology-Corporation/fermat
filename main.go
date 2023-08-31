@@ -54,7 +54,7 @@ func recoverAndRestart() {
 
 // setupHTTPServer sets up the necessary HTTP routes and starts the server.
 func setupHTTPServer() {
-	http.Handle("/editor/", theiaProxy("8080"))
+	http.Handle("/editor/", theiaProxy("3000"))
 	http.Handle("/runner/", proxyPass("4411"))
 	http.Handle("/database/", proxyPass("27017"))
 

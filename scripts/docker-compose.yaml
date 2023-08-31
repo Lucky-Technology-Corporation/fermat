@@ -19,9 +19,8 @@ services:
       PORT: 4411
     volumes:
       - $HOME/code:/swizzle-data/code
-    command: sh -c "npm install && npx nodemon server.js"
-    ports:
-      - "4411:4411"
+    command: sh -c "npm install && npx nodemon --inspect server.js >> /swizzle-data/code/app.log 2>&1"
+    ports: ["4411:4411", "9229:9229"]
     restart: always
   mongo:
     environment:
