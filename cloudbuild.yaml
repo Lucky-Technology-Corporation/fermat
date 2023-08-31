@@ -1,0 +1,10 @@
+steps:
+  # Set up Go environment and build the Go application
+  - name: 'golang:1.17'
+    entrypoint: 'bash'
+    args: ['-c', 'GOOS=linux GOARCH=amd64 go build -o fermat-linux .']
+
+  # Upload the built application to a Google Cloud Storage bucket
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['cp', 'fermat-linux', 'gs://your-bucket-name/fermat-linux']
+    id: upload
