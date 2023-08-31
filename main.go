@@ -149,6 +149,8 @@ func setupHTTPServer() error {
 		fmt.Fprintf(w, "Push successful: %s", string(out))
 	})
 
+	http.HandleFunc("/spoof_jwt", spoofJwt)
+
 	err := http.ListenAndServe(":1234", nil)
 	if err != nil {
 		return err
