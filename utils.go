@@ -108,3 +108,16 @@ func saveBytesToFile(filename string, data []byte) error {
 	_, err = file.Write(data)
 	return err
 }
+
+// loadDockerImageFromTarball is a helper function that will docker load -i [tarball] and logs any output
+func loadDockerImageFromTarball(tarballPath string) error {
+	cmd := exec.Command("docker", "load", "-i", tarballPath)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Command output: %s", output)
+	return nil
+}
