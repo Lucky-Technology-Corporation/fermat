@@ -26,7 +26,7 @@ func main() {
 	}
 
 	log.Println("[Step 2] Downloading pascal (theia) docker image")
-	err := downloadFileFromGoogleBucket("swizzle_scripts", "pascal.tar", "pascal.tar")
+	err = downloadFileFromGoogleBucket("swizzle_scripts", "pascal.tar", "pascal.tar")
 	if err != nil {
 		log.Fatalf("[Error] Failed to download and save pascal tarball (theia): %s", err)
 	}
