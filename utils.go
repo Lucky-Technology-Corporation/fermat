@@ -65,15 +65,16 @@ func executeGitCommand(dir string, args ...string) bool {
 	return true
 }
 
-// downloadFileFromGoogleBucket is a quick downloader script to grab the docker compose and any other deps
-func downloadFileFromGoogleBucket(bucketName, objectName string) ([]byte, error) {
+// downloadFileFromGoogleBucket downloads a file from a Google Cloud Storage bucket
+// and writes it directly to a given destination on disk.
+func downloadFileFromGoogleBucket(bucketName, objectName, destinationPath string) error {
 	ctx := context.Background()
 
 	log.Println("... creating google bucket connection ...")
 
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 	defer client.Close()
 
@@ -84,18 +85,25 @@ func downloadFileFromGoogleBucket(bucketName, objectName string) ([]byte, error)
 
 	r, err := obj.NewReader(ctx)
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to read object: %v", err)
+		return fmt.Errorf("failed to read object: %v", err)
 	}
 	defer r.Close()
 
 	log.Println("... pulling object ...")
 
-	data, err := io.ReadAll(r)
+	// Create or truncate the destination file
+	out, err := os.Create(destinationPath)
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to read data: %v", err)
+		return err
+	}
+	defer out.Close()
+
+	// Stream the content directly to the file
+	if _, err = io.Copy(out, r); err != nil {
+		return fmt.Errorf("failed to write data to file: %v", err)
 	}
 
-	return data, nil
+	return nil
 }
 
 // SaveBytesToFile saves a given []byte to a specified filename.
@@ -110,6 +118,19 @@ func saveBytesToFile(filename string, data []byte) error {
 	// Write the data to the file
 	_, err = file.Write(data)
 	return err
+}
+
+// loadDockerImageFromTarball is a helper function that will docker load -i [tarball] and logs any output
+func loadDockerImageFromTarball(tarballPath string) error {
+	cmd := exec.Command("docker", "load", "-i", tarballPath)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Command output: %s", output)
+	return nil
 }
 
 func decryptAES(ciphertext, key, iv []byte) ([]byte, error) {

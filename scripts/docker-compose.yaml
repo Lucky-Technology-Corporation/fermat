@@ -2,15 +2,11 @@ version: '3.7'
 
 services:
   theia:
-    image: codercom/code-server
-    environment:
-      PASSWORD: password
-      SUPER_ADMIN_PASSWORD: password
+    image: pascal:latest
     volumes:
-      - $HOME/code:/home/coder/swizzle-data/code
-      - $HOME/.config:/home/coder/swizzle-data/.config
+      - $HOME/code:$HOME/code
     ports:
-      - "8080:8080"
+      - "3000:3000"
     restart: unless-stopped
   nodemon-server:
     image: node:18
@@ -32,6 +28,5 @@ services:
     volumes:
       - mongo-data:/data/db
     restart: always
-
 volumes:
   mongo-data:
