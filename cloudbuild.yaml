@@ -11,4 +11,4 @@ steps:
 
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['cp', 'docker-compose.yaml', 'gs://swizzle_scripts/docker-compose.yaml']
-    id: upload-fermat
+    id: upload-docker-compose
