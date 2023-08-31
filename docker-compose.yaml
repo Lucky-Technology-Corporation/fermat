@@ -19,7 +19,7 @@ services:
       PORT: 4411
     volumes:
       - $HOME/code:/swizzle-data/code
-    command: sh -c "npm install && npx nodemon index.js"
+    command: sh -c "npm install && npx nodemon server.js"
     ports:
       - "4411:4411"
     restart: always

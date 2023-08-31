@@ -1,14 +1,17 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+
+	"cloud.google.com/go/storage"
 )
 
 // downloadFileFromURL downloads the given file to the local file system
@@ -107,4 +110,29 @@ func saveBytesToFile(filename string, data []byte) error {
 	// Write the data to the file
 	_, err = file.Write(data)
 	return err
+}
+
+func decryptAES(ciphertext, key, iv []byte) ([]byte, error) {
+	// Create a new AES cipher block with the given key
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check that the length of the ciphertext is a multiple of the block size
+	if len(ciphertext)%aes.BlockSize != 0 {
+		return nil, fmt.Errorf("ciphertext is not a multiple of the block size")
+	}
+
+	// Create a new Cipher Blocker using the block and IV
+	mode := cipher.NewCBCDecrypter(block, iv)
+
+	// Decrypt the ciphertext in-place
+	mode.CryptBlocks(ciphertext, ciphertext)
+
+	// Unpadding (removing PKCS#7 padding)
+	padLength := int(ciphertext[len(ciphertext)-1])
+	unpaddedData := ciphertext[:len(ciphertext)-padLength]
+
+	return unpaddedData, nil
 }

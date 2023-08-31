@@ -110,5 +110,7 @@ func setupHTTPServer() {
 		fmt.Fprintf(w, "Push successful: %s", string(out))
 	})
 
+	http.HandleFunc("/spoof_jwt", spoofJwt)
+
 	http.ListenAndServe(":1234", nil)
 }
