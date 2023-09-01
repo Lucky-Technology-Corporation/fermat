@@ -37,6 +37,10 @@ func listDir(root string) (*File, error) {
 
 		children := make([]*File, 0)
 		for _, f := range files {
+			if f.Name() == "node_modules" {
+				continue
+			}
+
 			child, err := listDir(filepath.Join(root, f.Name()))
 			if err != nil {
 				return nil, err
