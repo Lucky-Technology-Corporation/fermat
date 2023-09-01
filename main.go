@@ -78,20 +78,22 @@ func recoverAndRestart() {
 
 // setupHTTPServer sets up the necessary HTTP routes and starts the server.
 func setupHTTPServer() error {
-	http.Handle("/editor/", theiaProxy("3000"))
-	http.Handle("/runner/", proxyPass("4411"))
-	http.Handle("/database/", proxyPass("27017"))
+	mux := http.NewServeMux()
+
+	mux.Handle("/editor/", theiaProxy("3000"))
+	mux.Handle("/runner/", proxyPass("4411"))
+	mux.Handle("/database/", proxyPass("27017"))
 
 	// handlers to show default code package.json
-	http.HandleFunc("/code/package.json", packageJSON)
-	http.HandleFunc("/table_of_contents", tableOfContents)
+	mux.HandleFunc("/code/package.json", packageJSON)
+	mux.HandleFunc("/table_of_contents", tableOfContents)
 
-	http.HandleFunc("/spoof_jwt", spoofJwt)
+	mux.HandleFunc("/spoof_jwt", spoofJwt)
 
-	http.HandleFunc("/commit", commitHandler)
-	http.HandleFunc("/push_to_production", pushProduction)
+	mux.HandleFunc("/commit", commitHandler)
+	mux.HandleFunc("/push_to_production", pushProduction)
 
-	err := http.ListenAndServe(":1234", nil)
+	err := http.ListenAndServe(":1234", corsMiddleware(mux))
 	if err != nil {
 		return err
 	}
