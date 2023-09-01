@@ -61,7 +61,7 @@ func tableOfContents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
 		return
 	}
-	root := filepath.Join(home, "code")
+	root := filepath.Join(home, "code/user-content")
 	result, err := listDir(root)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
