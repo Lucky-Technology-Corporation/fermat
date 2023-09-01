@@ -22,25 +22,19 @@ func main() {
 		log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
 	}
 
-	log.Println("[Step 2] Downloading pascal (theia) docker image")
-	err = downloadFileFromGoogleBucket("swizzle_scripts", "pascal.tar", "pascal.tar")
+	log.Println("[Step 2] Authenticating artifact registry...")
+	err = setupArtifactRegistryAuth()
 	if err != nil {
-		log.Fatalf("[Error] Failed to download and save pascal tarball (theia): %s", err)
+		log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
 	}
 
-	log.Println("[Step 3] Load docker image from tarball")
-	err = loadDockerImageFromTarball("pascal.tar")
-	if err != nil {
-		log.Fatalf("[Error] Failed to load docker tarball: %s", err)
-	}
-
-	log.Println("[Step 4] Running docker compose...")
+	log.Println("[Step 3] Running docker compose...")
 	err = runDockerCompose()
 	if err != nil {
 		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	log.Println("[Step 5] Setting up HTTP server...")
+	log.Println("[Step 4] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
 	signals := make(chan os.Signal, 1)
@@ -92,6 +86,22 @@ func setupHTTPServer() error {
 
 	mux.HandleFunc("/commit", commitHandler)
 	mux.HandleFunc("/push_to_production", pushProduction)
+
+	mux.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		err := runDockerCompose()
+		if err != nil {
+			log.Println("Error:", err)
+			http.Error(w, "Failed to run docker compose", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Refresh success!"))
+	})
 
 	err := http.ListenAndServe(":1234", corsMiddleware(mux))
 	if err != nil {
