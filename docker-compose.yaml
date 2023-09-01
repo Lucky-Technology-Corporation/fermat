@@ -2,15 +2,11 @@ version: '3.7'
 
 services:
   theia:
-    image: codercom/code-server
-    environment:
-      PASSWORD: password
-      SUPER_ADMIN_PASSWORD: password
+    image: theia-test:latest
     volumes:
-      - $HOME/code:/home/coder/swizzle-data/code
-      - $HOME/.config:/home/coder/swizzle-data/.config
+      - $HOME/code:$HOME/code
     ports:
-      - "8080:8080"
+      - "3000:3000"
     restart: unless-stopped
   nodemon-server:
     image: node:18
@@ -19,9 +15,8 @@ services:
       PORT: 4411
     volumes:
       - $HOME/code:/swizzle-data/code
-    command: sh -c "npm install && npx nodemon server.js"
-    ports:
-      - "4411:4411"
+    command: sh -c "npm install && npx nodemon --inspect server.js >> /swizzle-data/code/app.log 2>&1"
+    ports: ["4411:4411", "9229:9229"]
     restart: always
   mongo:
     environment:
@@ -33,6 +28,5 @@ services:
     volumes:
       - mongo-data:/data/db
     restart: always
-
 volumes:
   mongo-data:
