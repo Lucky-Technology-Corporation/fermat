@@ -1,8 +1,8 @@
 version: '3.7'
 
 services:
-  theia:
-    image: theia-test:latest
+  pascal:
+    image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
     ports:

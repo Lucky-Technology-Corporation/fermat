@@ -32,6 +32,12 @@ func downloadFileFromURL(url string, destination string) error {
 	return err
 }
 
+// Runs: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+// This allows the docker compose to reference an image on the artifact registry.
+func setupArtifactRegistryAuth() error {
+	return exec.Command("gcloud", "auth", "configure-docker", "us-central1-docker.pkg.dev", "--quiet").Run()
+}
+
 // runDockerCompose runs `docker compose down` and `docker compose up -d`
 func runDockerCompose() error {
 	down := exec.Command("docker", "compose", "down")
