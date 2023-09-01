@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type File struct {
@@ -37,7 +38,8 @@ func listDir(root string) (*File, error) {
 
 		children := make([]*File, 0)
 		for _, f := range files {
-			if f.Name() == "node_modules" {
+			fullPath := filepath.Join(root, f.Name())
+			if strings.Contains(fullPath, "node_modules") {
 				continue
 			}
 
