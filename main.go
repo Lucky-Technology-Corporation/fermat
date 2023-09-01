@@ -84,6 +84,21 @@ func setupHTTPServer() error {
 
 	http.HandleFunc("/commit", commitHandler)
 	http.HandleFunc("/push_to_production", pushProduction)
+	http.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		err := runDockerCompose()
+		if err != nil {
+			log.Println("Error:", err)
+			http.Error(w, "Failed to run docker compose", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Refresh success!"))
+	})
 
 	err := http.ListenAndServe(":1234", nil)
 	if err != nil {
