@@ -1,15 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -86,58 +83,13 @@ func setupHTTPServer() error {
 	http.Handle("/database/", proxyPass("27017"))
 
 	// handlers to show default code package.json
-	http.HandleFunc("/code/package.json", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Not Found", http.StatusNotFound)
-			return
-		}
-
-		file, err := os.Open("code/package.json")
-		if err != nil {
-			http.Error(w, "Failed to open file", http.StatusNotFound)
-			return
-		}
-		defer func() {
-			if cerr := file.Close(); cerr != nil {
-				log.Printf("Failed to close file: %v", cerr)
-			}
-		}()
-
-		_, err = io.Copy(w, file)
-		if err != nil {
-			http.Error(w, "Failed to write file content", http.StatusInternalServerError)
-		}
-	})
-
-	http.HandleFunc("/commit", commitHandler)
-
-	http.HandleFunc("/push_to_production", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
-		cmd := exec.Command("git", "commit", "-a", "-m", commitMessage) // '-a' adds all changes
-		cmd.Dir = "code"
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		cmd = exec.Command("git", "push", "origin", "production")
-		cmd.Dir = "code"
-		out, err = cmd.CombinedOutput()
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to push: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Fprintf(w, "Push successful: %s", string(out))
-	})
+	http.HandleFunc("/code/package.json", packageJSON)
+	http.HandleFunc("/table_of_contents", tableOfContents)
 
 	http.HandleFunc("/spoof_jwt", spoofJwt)
+
+	http.HandleFunc("/commit", commitHandler)
+	http.HandleFunc("/push_to_production", pushProduction)
 
 	err := http.ListenAndServe(":1234", nil)
 	if err != nil {

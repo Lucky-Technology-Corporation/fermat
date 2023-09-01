@@ -161,6 +161,32 @@ func CheckIfError(w http.ResponseWriter, err error) {
 	}
 }
 
+func pushProduction(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
+	cmd := exec.Command("git", "commit", "-a", "-m", commitMessage) // '-a' adds all changes
+	cmd.Dir = "code"
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	cmd = exec.Command("git", "push", "origin", "production")
+	cmd.Dir = "code"
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to push: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Push successful: %s", string(out))
+}
+
 func mergeMasterIntoRelease() error {
 	cmd := exec.Command("git", "checkout", "release")
 	if err := cmd.Run(); err != nil {
