@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -162,4 +163,19 @@ func decryptAES(ciphertext, key, iv []byte) ([]byte, error) {
 	unpaddedData := ciphertext[:len(ciphertext)-padLength]
 
 	return unpaddedData, nil
+}
+
+func WriteJSONResponse(w http.ResponseWriter, data interface{}) error {
+	// Marshal the map to JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	// Set content type and write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
+
+	return nil
 }

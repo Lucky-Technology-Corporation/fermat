@@ -14,11 +14,6 @@ import (
 )
 
 func spoofJwt(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	userId := r.URL.Query().Get("user_id")
 	if userId == "" {
 		http.Error(w, "Invalid user_id specified", http.StatusBadRequest)
@@ -34,7 +29,7 @@ func spoofJwt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read the JSON file into a byte slice
-	fileData, err := ioutil.ReadFile("/code/secrets.json")
+	fileData, err := ioutil.ReadFile(SECRETS_FILE_PATH)
 	if err != nil {
 		log.Println("Error:", err)
 		http.Error(w, "Failed reading secrets.json file", http.StatusInternalServerError)
@@ -84,20 +79,13 @@ func spoofJwt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := map[string]string{
+	data := &map[string]string{
 		"jwt": tokenString,
 	}
 
-	// Marshal the map to JSON
-	jsonData, err := json.Marshal(data)
+	err = WriteJSONResponse(w, data)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		http.Error(w, "Failed to write JSON response", http.StatusInternalServerError)
 		return
 	}
-
-	// Set content type and write the JSON response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonData)
 }

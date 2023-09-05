@@ -7,7 +7,11 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+
+	"github.com/go-chi/chi/v5"
 )
+
+const SECRETS_FILE_PATH = "/code/secrets.json"
 
 func main() {
 	defer recoverAndRestart() // If the program panics, this will attempt to restart it.
@@ -72,26 +76,25 @@ func recoverAndRestart() {
 
 // setupHTTPServer sets up the necessary HTTP routes and starts the server.
 func setupHTTPServer() error {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
+	r.Use(corsMiddleware)
 
-	mux.Handle("/editor/", theiaProxy("3000"))
-	mux.Handle("/runner/", proxyPass("4411"))
-	mux.Handle("/database/", proxyPass("27017"))
+	r.Handle("/editor/", theiaProxy("3000"))
+	r.Handle("/runner/", proxyPass("4411"))
+	r.Handle("/database/", proxyPass("27017"))
 
 	// handlers to show default code package.json
-	mux.HandleFunc("/code/package.json", packageJSON)
-	mux.HandleFunc("/table_of_contents", tableOfContents)
+	r.HandleFunc("/code/package.json", packageJSON)
+	r.HandleFunc("/table_of_contents", tableOfContents)
 
-	mux.HandleFunc("/spoof_jwt", spoofJwt)
+	r.Get("/spoof_jwt", spoofJwt)
 
-	mux.HandleFunc("/commit", commitHandler)
-	mux.HandleFunc("/push_to_production", pushProduction)
+	r.HandleFunc("/commit", commitHandler)
+	r.HandleFunc("/push_to_production", pushProduction)
+	r.Get("/secrets", GetSecrets)
+	r.Patch("/secrets", UpdateSecrets)
 
-	mux.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
-			return
-		}
+	r.Post("/refresh", func(w http.ResponseWriter, r *http.Request) {
 		err := runDockerCompose()
 		if err != nil {
 			log.Println("Error:", err)
@@ -103,7 +106,7 @@ func setupHTTPServer() error {
 		w.Write([]byte("Refresh success!"))
 	})
 
-	err := http.ListenAndServe(":1234", corsMiddleware(mux))
+	err := http.ListenAndServe(":1234", r)
 	if err != nil {
 		return err
 	}
