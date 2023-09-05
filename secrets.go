@@ -1,12 +1,7 @@
 package main
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -60,44 +55,6 @@ func UpdateSecrets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func parsePrivateKeyFromParam(key string) (*rsa.PrivateKey, error) {
-	privateKeyDecoded, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return nil, err
-	}
-
-	block, _ := pem.Decode(privateKeyDecoded)
-	if block == nil {
-		return nil, errors.New("Failed to decode PEM block")
-	}
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return privateKey, nil
-}
-
-func parsePublicKeyFromParam(key string) (*rsa.PublicKey, error) {
-	publicKeyDecoded, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return nil, err
-	}
-
-	block, _ := pem.Decode(publicKeyDecoded)
-	if block == nil {
-		return nil, errors.New("Failed to decode PEM block")
-	}
-
-	publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return publicKey, nil
 }
 
 func ReadSecretsFromFile() (*Secrets, error) {

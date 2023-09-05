@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const SECRETS_FILE_PATH = "/code/secrets.json"
+const SECRETS_FILE_PATH = "code/secrets.json"
 
 func main() {
 	defer recoverAndRestart() // If the program panics, this will attempt to restart it.

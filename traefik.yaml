@@ -1,0 +1,7 @@
+certificatesResolvers:
+  myResolver:
+    acme:
+      email: swizzle@swizzle.run
+      storage: acme.json
+      httpChallenge:
+        entryPoint: web
