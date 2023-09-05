@@ -1,6 +1,33 @@
 version: '3.7'
 
 services:
+<<<<<<< Updated upstream
+=======
+  traefik:
+    image: traefik:v2.10.4
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
+      - "--certificatesresolvers.fermatresolver.acme.storage=/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./acme.json:/acme.json"
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+>>>>>>> Stashed changes
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
@@ -17,6 +44,15 @@ services:
     volumes:
       - $HOME/code:/swizzle-data/code
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
+<<<<<<< Updated upstream
+=======
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.runner.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.entrypoints=websecure"
+      - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+>>>>>>> Stashed changes
     ports: ["4411:4411", "9229:9229"]
     restart: always
   mongo:
@@ -24,6 +60,15 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     image: mongo:latest
+<<<<<<< Updated upstream
+=======
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.mongo.entrypoints=web"
+      - "traefik.http.routers.mongosecure.entrypoints=websecure"
+      - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
+>>>>>>> Stashed changes
     ports:
       - "27017:27017"
     volumes:
