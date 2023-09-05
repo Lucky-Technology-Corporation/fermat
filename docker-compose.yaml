@@ -1,10 +1,35 @@
 version: '3.7'
 
 services:
+  traefik:
+    image: traefik:v2.5 # Use the version you prefer
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # For Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./acme.json:/acme.json
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.swizzle.run`)"
+      - "traefik.http.routers.api.service=api@internal"
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pascal.rule=Host(`pascal.swizzle.run`)"
+      - "traefik.http.routers.pascal.entrypoints=web"
+      - "traefik.http.routers.pascalsecure.entrypoints=websecure"
+      - "traefik.http.routers.pascalsecure.tls.certresolver=myresolver"
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -17,6 +42,12 @@ services:
     volumes:
       - $HOME/code:/swizzle-data/code
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.runner.rule=Host(`runner.swizzle.run`)"
+      - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.entrypoints=websecure"
+      - "traefik.http.routers.runnersecure.tls.certresolver=myresolver"
     ports: ["4411:4411", "9229:9229"]
     restart: always
   mongo:
@@ -24,6 +55,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     image: mongo:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo.rule=Host(`db.swizzle.run`)"
+      - "traefik.http.routers.mongo.entrypoints=web"
+      - "traefik.http.routers.mongosecure.entrypoints=websecure"
+      - "traefik.http.routers.mongosecure.tls.certresolver=myresolver"
     ports:
       - "27017:27017"
     volumes:
