@@ -25,7 +25,6 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
-
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
@@ -34,6 +33,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.pascal.entrypoints=web"
+      - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.pascalsecure.entrypoints=websecure"
       - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
     ports:
@@ -53,6 +53,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.runner.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
     ports: [ "4411:4411", "9229:9229" ]
@@ -67,6 +68,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.mongo.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.mongo.entrypoints=web"
+      - "traefik.http.routers.mongosecure.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.mongosecure.entrypoints=websecure"
       - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
     ports:
