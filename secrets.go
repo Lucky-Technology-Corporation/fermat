@@ -1,7 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -88,4 +95,74 @@ func (secrets Secrets) SaveSecrets(out io.Writer) error {
 		return err
 	}
 	return nil
+}
+
+func (secrets Secrets) DecryptSecrets(testKey *rsa.PrivateKey, prodKey *rsa.PrivateKey) error {
+	for name := range secrets.Test {
+		if testKey != nil {
+			decrypted, err := secrets.ReadEncryptedSecret(true, name, testKey)
+			if err != nil {
+				return err
+			}
+			secrets.Test[name] = decrypted
+		}
+	}
+
+	for name := range secrets.Prod {
+		if prodKey != nil {
+			decrypted, err := secrets.ReadEncryptedSecret(false, name, prodKey)
+			if err != nil {
+				return err
+			}
+			secrets.Prod[name] = decrypted
+		}
+	}
+
+	return nil
+}
+
+func (secrets Secrets) ReadEncryptedSecret(test bool, secret string, key *rsa.PrivateKey) (string, error) {
+
+	var secretValues map[string]string
+	if test {
+		secretValues = secrets.Test
+	} else {
+		secretValues = secrets.Prod
+	}
+
+	v, ok := secretValues[secret]
+	if !ok {
+		return "", fmt.Errorf(`No secret "%s" to decrypt`, secret)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(v)
+	if err != nil {
+		return "", nil
+	}
+
+	decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, key, decoded)
+	if err != nil {
+		return "", nil
+	}
+
+	return string(decrypted), nil
+}
+
+func ParseBase64PrivateKey(key string) (*rsa.PrivateKey, error) {
+	privateKeyDecoded, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(privateKeyDecoded)
+	if block == nil {
+		return nil, errors.New("Failed to decode PEM block")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
 }
