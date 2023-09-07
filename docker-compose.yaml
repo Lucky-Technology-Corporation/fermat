@@ -1,13 +1,45 @@
 version: '3.7'
 
 services:
+  traefik:
+    image: traefik:v2.10.4
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
+      - "--certificatesresolvers.fermatresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls.certresolver=fermatresolver"
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.pascal.entrypoints=web"
+      - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.pascalsecure.entrypoints=websecure"
+      - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
     ports:
       - "3000:3000"
     restart: unless-stopped
+
   nodemon-server:
     image: node:18
     working_dir: /swizzle-data/code
@@ -17,17 +49,33 @@ services:
     volumes:
       - $HOME/code:/swizzle-data/code
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
-    ports: ["4411:4411", "9229:9229"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.runner.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.runnersecure.entrypoints=websecure"
+      - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+    ports: [ "4411:4411", "9229:9229" ]
     restart: always
+
   mongo:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     image: mongo:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.mongo.entrypoints=web"
+      - "traefik.http.routers.mongosecure.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.mongosecure.entrypoints=websecure"
+      - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
     restart: always
+
 volumes:
   mongo-data:
