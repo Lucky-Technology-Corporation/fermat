@@ -26,6 +26,9 @@ services:
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
   einstein:
+    environment:
+      API_KEY: ${API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
     image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
   fermat-gateway:
     image: nginx:alpine
@@ -63,8 +66,10 @@ services:
     working_dir: /swizzle-data/code
     environment:
       SWIZZLE_SUPER_SECRET: ${SWIZZLE_SUPER_SECRET}
-      PORT: 4411
+      SWIZZLE_PROJECT_NAME: ${SWIZZLE_PROJECT_NAME}
+      SWIZZLE_ENV: test
       GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
+      PORT: 4411
     volumes:
       - $HOME/code:/swizzle-data/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
