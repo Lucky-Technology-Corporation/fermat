@@ -25,10 +25,22 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+  fermat-gateway:
+    image: nginx:alpine
+    command: /bin/sh -c "echo 'events {} http { server { listen 80; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.nginx-gateway.entrypoints=websecure"
+      - "traefik.http.routers.nginx-gateway.tls.certresolver=fermatresolver"
+      - "traefik.http.services.nginx-gateway.loadbalancer.server.port=80"
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
+      - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
@@ -46,8 +58,10 @@ services:
     environment:
       SWIZZLE_SUPER_SECRET: ${SWIZZLE_SUPER_SECRET}
       PORT: 4411
+      GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
     volumes:
       - $HOME/code:/swizzle-data/code
+      - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
     labels:
       - "traefik.enable=true"
