@@ -1,10 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -20,50 +16,27 @@ func spoofJwt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	superSecretHex := os.Getenv("SWIZZLE_SUPER_SECRET")
-	superSecret, err := hex.DecodeString(superSecretHex)
+	superSecretBase64 := os.Getenv("SWIZZLE_SUPER_SECRET")
+	superSecret, err := ParseBase64PrivateKey(superSecretBase64)
 	if err != nil {
 		log.Println("Error:", err)
-		http.Error(w, "Failed to decode super secret from hex", http.StatusInternalServerError)
+		http.Error(w, "Failed to read super secret", http.StatusInternalServerError)
 		return
 	}
 
-	// Read the JSON file into a byte slice
-	fileData, err := ioutil.ReadFile(SECRETS_FILE_PATH)
+	secrets, err := ReadSecretsFromFile()
 	if err != nil {
 		log.Println("Error:", err)
-		http.Error(w, "Failed reading secrets.json file", http.StatusInternalServerError)
+		http.Error(w, "Failed to read secrets", http.StatusInternalServerError)
 		return
 	}
 
-	var result map[string]interface{}
-
-	err = json.Unmarshal(fileData, &result)
+	err = secrets.DecryptSecrets(superSecret, nil)
 	if err != nil {
 		log.Println("Error:", err)
-		http.Error(w, "Failed to parse secret.json file", http.StatusInternalServerError)
+		http.Error(w, "Failed to decrypt secrets", http.StatusInternalServerError)
 		return
 	}
-
-	jwtSigningSecret := result["test"].(map[string]interface{})["SWIZZLE_JWT_SECRET_KEY"].(map[string]interface{})
-	jwtSigningSecretCipherBase64 := jwtSigningSecret["cipher"].(string)
-	jwtSigningSecretIv := jwtSigningSecret["iv"].(string)
-
-	jwtSigningSecretCipher, err := base64.StdEncoding.DecodeString(jwtSigningSecretCipherBase64)
-	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, "Failed to decode the JWT cipher from base64", http.StatusInternalServerError)
-		return
-	}
-
-	decrypted, err := decryptAES(jwtSigningSecretCipher, superSecret, []byte(jwtSigningSecretIv))
-	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, "Failed to decrypt the JWT signing secret from AES", http.StatusInternalServerError)
-		return
-	}
-
-	jwtSecretKey := string(decrypted)
 
 	// Create the token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -71,7 +44,7 @@ func spoofJwt(w http.ResponseWriter, r *http.Request) {
 		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Expires in 24 hours
 	})
 
-	tokenString, err := token.SignedString([]byte(jwtSecretKey))
+	tokenString, err := token.SignedString([]byte(secrets.Test["SWIZZLE_JWT_SECRET_KEY"]))
 
 	if err != nil {
 		log.Println("Error:", err)
