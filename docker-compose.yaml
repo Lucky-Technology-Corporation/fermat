@@ -25,15 +25,21 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+  einstein:
+    image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
   fermat-gateway:
     image: nginx:alpine
-    command: /bin/sh -c "echo 'events {} http { server { listen 80; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    command: /bin/sh -c "echo 'events {} http { server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.nginx-gateway.entrypoints=websecure"
       - "traefik.http.routers.nginx-gateway.tls.certresolver=fermatresolver"
-      - "traefik.http.services.nginx-gateway.loadbalancer.server.port=80"
+      - "traefik.http.services.nginx-gateway.loadbalancer.server.port=5552"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.nginx-gateway.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://localhost:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:

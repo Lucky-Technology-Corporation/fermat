@@ -79,10 +79,6 @@ func setupHTTPServer() error {
 	r := chi.NewRouter()
 	r.Use(corsMiddleware)
 
-	r.Handle("/editor/", theiaProxy("3000"))
-	r.Handle("/runner/", proxyPass("4411"))
-	r.Handle("/database/", proxyPass("27017"))
-
 	// handlers to show default code package.json
 	r.HandleFunc("/code/package.json", packageJSON)
 	r.HandleFunc("/table_of_contents", tableOfContents)
