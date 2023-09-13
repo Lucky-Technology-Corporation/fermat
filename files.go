@@ -71,6 +71,47 @@ func tableOfContents(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func tableOfFiles(w http.ResponseWriter, r *http.Request) {
+	home, ok := os.LookupEnv("HOME")
+	if !ok {
+		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
+		return
+	}
+	root := filepath.Join(home, "code/user-hosting")
+	result, err := listDir(root)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func fileContents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
+	path := r.URL.Query().Get("path")
+
+	file, err := os.Open(path)
+	if err != nil {
+		http.Error(w, "Failed to open file", http.StatusNotFound)
+		return
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Printf("Failed to close file: %v", cerr)
+		}
+	}()
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "Failed to write file content", http.StatusInternalServerError)
+	}
+}
+
 func packageJSON(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Not Found", http.StatusNotFound)
