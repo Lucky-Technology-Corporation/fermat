@@ -44,6 +44,9 @@ func runDockerCompose() error {
 	down := exec.Command("docker", "compose", "down")
 	_ = down.Run()
 
+	pull := exec.Command("docker", "compose", "pull")
+	_ = pull.Run()
+
 	up := exec.Command("docker", "compose", "up", "-d")
 	return up.Run()
 }
