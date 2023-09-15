@@ -48,14 +48,7 @@ func UpdateSecrets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, err := os.OpenFile(SECRETS_FILE_PATH, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		http.Error(w, "Failed to open secrets.json file for writing", http.StatusInternalServerError)
-		return
-	}
-	defer file.Close()
-
-	err = newSecrets.SaveSecrets(file)
+	err = newSecrets.SaveSecretsToFile(SECRETS_FILE_PATH)
 	if err != nil {
 		http.Error(w, "Failed to write secrets.json", http.StatusInternalServerError)
 		return
@@ -95,6 +88,16 @@ func (secrets Secrets) SaveSecrets(out io.Writer) error {
 		return err
 	}
 	return nil
+}
+
+func (secrets Secrets) SaveSecretsToFile(filename string) error {
+	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return secrets.SaveSecrets(file)
 }
 
 func (secrets Secrets) DecryptSecrets(testKey *rsa.PrivateKey, prodKey *rsa.PrivateKey) error {

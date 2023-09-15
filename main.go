@@ -38,7 +38,13 @@ func main() {
 		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	log.Println("[Step 4] Setting up HTTP server...")
+	log.Println("[Step 4] Writing secrets to file...")
+	err = saveInitialSecrets()
+	if err != nil {
+		log.Fatalf("[Error] Failed to save initial secrets: %v", err)
+	}
+
+	log.Println("[Step 5] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
 	signals := make(chan os.Signal, 1)

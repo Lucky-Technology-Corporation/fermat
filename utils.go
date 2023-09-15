@@ -11,9 +11,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 
 	"cloud.google.com/go/storage"
 )
+
+const SECRETS_JSON = "SECRETS_JSON"
 
 // downloadFileFromURL downloads the given file to the local file system
 func downloadFileFromURL(url string, destination string) error {
@@ -166,6 +169,20 @@ func decryptAES(ciphertext, key, iv []byte) ([]byte, error) {
 	unpaddedData := ciphertext[:len(ciphertext)-padLength]
 
 	return unpaddedData, nil
+}
+
+func saveInitialSecrets() error {
+	secretsJson, exists := os.LookupEnv(SECRETS_JSON)
+	if !exists {
+		log.Println("[Warning] " + SECRETS_JSON + " environment variable is not set.")
+		return nil
+	}
+
+	secrets, err := ReadSecrets(strings.NewReader(secretsJson))
+	if err != nil {
+		return err
+	}
+	return secrets.SaveSecretsToFile(SECRETS_FILE_PATH)
 }
 
 func WriteJSONResponse(w http.ResponseWriter, data interface{}) error {
