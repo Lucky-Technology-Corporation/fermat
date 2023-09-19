@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const (
@@ -161,30 +163,40 @@ func CheckIfError(w http.ResponseWriter, err error) {
 	}
 }
 
+type CommandRunner struct {
+	err error
+	dir string
+}
+
+func (runner *CommandRunner) Run(name string, args ...string) {
+	if runner.err != nil {
+		return
+	}
+
+	cmd := exec.Command(name, args...)
+	cmd.Dir = runner.dir
+
+	if err := cmd.Run(); err != nil {
+		cmdParts := append([]string{name}, args...)
+		cmdString := strings.Join(cmdParts, " ")
+		runner.err = fmt.Errorf("Failed while running command: '%s'. Error: %v", cmdString, err)
+	}
+}
+
 func pushProduction(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
-	cmd := exec.Command("git", "commit", "-a", "-m", commitMessage) // '-a' adds all changes
-	cmd.Dir = "code"
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to commit: %s", err), http.StatusInternalServerError)
+
+	runner := &CommandRunner{dir: "code"}
+	runner.Run("git", "add", ".")
+	runner.Run("git", "commit", ".", "-m", commitMessage)
+	runner.Run("git", "push", "origin", "master:release")
+
+	if runner.err != nil {
+		http.Error(w, runner.err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cmd = exec.Command("git", "push", "origin", "production")
-	cmd.Dir = "code"
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to push: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "Push successful: %s", string(out))
+	w.WriteHeader(http.StatusOK)
 }
 
 func mergeMasterIntoRelease() error {
