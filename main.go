@@ -94,7 +94,7 @@ func setupHTTPServer() error {
 	r.Get("/spoof_jwt", spoofJwt)
 
 	r.HandleFunc("/commit", commitHandler)
-	r.HandleFunc("/push_to_production", pushProduction)
+	r.Post("/push_to_production", pushProduction)
 
 	r.Get("/secrets", GetSecrets)
 	r.Patch("/secrets", UpdateSecrets)
