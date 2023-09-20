@@ -99,7 +99,7 @@ func setupHTTPServer() error {
 	r.Get("/secrets", GetSecrets)
 	r.Patch("/secrets", UpdateSecrets)
 
-	r.Post("/update_google_credentials", updateGoogleCredentials)
+	r.Post("/update_repo", updateRepo)
 	r.Post("/refresh", func(w http.ResponseWriter, r *http.Request) {
 		err := runDockerCompose()
 		if err != nil {

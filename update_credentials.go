@@ -1,30 +1,27 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
-type UpdateGoogleCredentialsRequest struct {
-	// Base64 encoded google credentials
-	Credentials string `json:"credentials"`
+type UpdateRepoRequest struct {
+	// Base64 encoded service account credentials
+	GoogleSACredentials string `json:"google_sa_credentials"`
+	GoogleSourceRepo    string `json:"google_source_repo"`
 }
 
-func updateGoogleCredentials(w http.ResponseWriter, r *http.Request) {
-	var req UpdateGoogleCredentialsRequest
+func updateRepo(w http.ResponseWriter, r *http.Request) {
+	var req UpdateRepoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
 
-	credentials, err := base64.StdEncoding.DecodeString(req.Credentials)
+	credentials, err := base64.StdEncoding.DecodeString(req.GoogleSACredentials)
 	if err != nil {
 		http.Error(w, "Credentials must be base64 encoded", http.StatusBadRequest)
 		return
@@ -38,23 +35,19 @@ func updateGoogleCredentials(w http.ResponseWriter, r *http.Request) {
 
 	filePath := filepath.Join(home, ".config", "gcloud", "application_default_credentials.json")
 
-	err = ioutil.WriteFile(filePath, credentials, 0644)
+	err = os.WriteFile(filePath, credentials, 0644)
 	if err != nil {
 		http.Error(w, "Failed to write credentials file", http.StatusInternalServerError)
 		return
 	}
 
-	// Re-auth with new credentials
-	var cmdOut bytes.Buffer
-	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", filePath)
-	cmd.Stdout = &cmdOut
-	cmd.Stderr = &cmdOut
+	runner := &CommandRunner{dir: "code"}
 
-	if err = cmd.Run(); err != nil {
-		log.Println("Failed to run gcloud auth command")
-		log.Println(cmdOut.String())
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", filePath)
+	runner.Run("git", "remote", "set-url", "origin", req.GoogleSourceRepo)
 
-		http.Error(w, "Failed to re-authenticate using new credentials file", http.StatusInternalServerError)
+	if runner.err != nil {
+		http.Error(w, runner.err.Error(), http.StatusInternalServerError)
 		return
 	}
 
