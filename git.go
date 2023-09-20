@@ -164,8 +164,9 @@ func CheckIfError(w http.ResponseWriter, err error) {
 }
 
 type CommandRunner struct {
-	err error
-	dir string
+	err    error
+	dir    string
+	output []byte
 }
 
 func (runner *CommandRunner) Run(name string, args ...string) {
@@ -176,10 +177,13 @@ func (runner *CommandRunner) Run(name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = runner.dir
 
-	if err := cmd.Run(); err != nil {
+	output, err := cmd.CombinedOutput()
+	runner.output = output
+
+	if err != nil {
 		cmdParts := append([]string{name}, args...)
 		cmdString := strings.Join(cmdParts, " ")
-		runner.err = fmt.Errorf("Failed while running command: '%s'. Error: %v", cmdString, err)
+		runner.err = fmt.Errorf("Failed while running command: '%s'. Error: %v. Command Output:\n%s", cmdString, err, string(runner.output))
 	}
 }
 
