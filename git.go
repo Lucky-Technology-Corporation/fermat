@@ -193,7 +193,7 @@ func pushProduction(w http.ResponseWriter, r *http.Request) {
 	runner := &CommandRunner{dir: "code"}
 	runner.Run("git", "add", ".")
 	runner.Run("git", "commit", "-m", commitMessage)
-	runner.Run("git", "push", "origin", "master:release")
+	runner.Run("git", "push", "-o", "nokeycheck", "origin", "master:release")
 
 	if runner.err != nil {
 		http.Error(w, runner.err.Error(), http.StatusInternalServerError)
