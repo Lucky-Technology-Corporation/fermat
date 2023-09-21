@@ -16,7 +16,7 @@ services:
       - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
       - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.fermatresolver.acme.eab.kid=${ZERO_SSL_KID}"
-      - "--certificatesresolvers.fermatresolver.acme.eab.hmac=${ZERO_SSL_HMAC}"
+      - "--certificatesresolvers.fermatresolver.acme.eab.hmacKey=${ZERO_SSL_HMAC_KEY}"
     ports:
       - "80:80"
       - "443:443"
