@@ -11,16 +11,19 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
-      - "--certificatesresolvers.fermatresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
+      - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
+      - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.fermatresolver.acme.eab.kid=${ZERO_SSL_KID}"
+      - "--certificatesresolvers.fermatresolver.acme.eab.hmac=${ZERO_SSL_HMAC}"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./letsencrypt:/letsencrypt"
+      - "./zero_ssl:/zero_ssl"
     labels:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
