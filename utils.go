@@ -42,16 +42,31 @@ func setupArtifactRegistryAuth() error {
 	return exec.Command("gcloud", "auth", "configure-docker", "us-central1-docker.pkg.dev", "--quiet").Run()
 }
 
-// runDockerCompose runs `docker compose down` and `docker compose up -d`
+// runDockerCompose runs `docker compose down`, `docker compose pull` and `docker compose up -d`,
+// and logs the output to docker_compose_fermat.log
 func runDockerCompose() error {
-	down := exec.Command("docker", "compose", "down")
-	_ = down.Run()
+	logFile, err := os.OpenFile("docker_compose_fermat.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
 
-	pull := exec.Command("docker", "compose", "pull")
-	_ = pull.Run()
+	commands := [][]string{
+		{"docker", "compose", "down"},
+		{"docker", "compose", "pull"},
+		{"docker", "compose", "up", "-d"},
+	}
 
-	up := exec.Command("docker", "compose", "up", "-d")
-	return up.Run()
+	for _, cmdArgs := range commands {
+		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // directoryExists checks if a directory exists at the given path

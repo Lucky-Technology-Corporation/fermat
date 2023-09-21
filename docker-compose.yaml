@@ -28,11 +28,21 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
   einstein:
     environment:
       API_KEY: ${API_KEY}
       JWT_SECRET: ${JWT_SECRET}
     image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
   fermat-gateway:
     image: nginx:alpine
     command: /bin/sh -c "echo 'events {} http { server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
@@ -46,6 +56,11 @@ services:
       - "traefik.http.routers.nginx-gateway.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://localhost:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
@@ -60,6 +75,11 @@ services:
       - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.pascalsecure.entrypoints=websecure"
       - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -77,6 +97,11 @@ services:
       - $HOME/code:/swizzle-data/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.runner.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
@@ -99,6 +124,11 @@ services:
       - "traefik.http.routers.mongosecure.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.mongosecure.entrypoints=websecure"
       - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
     ports:
       - "27017:27017"
     volumes:
