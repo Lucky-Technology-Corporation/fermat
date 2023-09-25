@@ -70,6 +70,8 @@ services:
       - "traefik.http.routers.nginx-gateway.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://localhost:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    ports:
+      - "5552:5552"
     logging:
       driver: "json-file"
       options:
