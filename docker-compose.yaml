@@ -44,6 +44,8 @@ services:
       API_KEY: ${API_KEY}
       JWT_SECRET: ${JWT_SECRET}
     image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
+    ports:
+      - "2244:2244"
     logging:
       driver: "json-file"
       options:
