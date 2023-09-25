@@ -38,6 +38,7 @@ services:
         max-size: "200k"
         max-file: "10"
     restart: always
+
   einstein:
     environment:
       API_KEY: ${API_KEY}
@@ -49,6 +50,7 @@ services:
         max-size: "200k"
         max-file: "10"
     restart: always
+
   fermat-gateway:
     image: nginx:mainline
     networks:
