@@ -1,7 +1,7 @@
 version: '3.7'
 
 networks:
-  custom_network:
+  fermat-gateway-network:
     driver: bridge
 
 services:
@@ -52,8 +52,8 @@ services:
   fermat-gateway:
     image: nginx:mainline
     networks:
-      - custom_network
-    command: /bin/sh -c "echo 'events {} http { server { listen 5552; location / { proxy_pass http://<HOST_IP_ON_BRIDGE_NETWORK>:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+      - fermat-gateway-network
+    command: /bin/sh -c "echo 'events {} http { server { listen 5552; location / { proxy_pass http://172.17.0.1:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
