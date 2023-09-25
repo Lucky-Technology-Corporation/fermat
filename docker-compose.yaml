@@ -11,6 +11,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.mongo.address=:27017"
       - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
       - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
       - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
@@ -21,6 +22,7 @@ services:
       - "80:80"
       - "443:443"
       - "8080:8080"
+      - "27017:27017"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
@@ -134,30 +136,23 @@ services:
     restart: always
 
   mongo:
+    image: mongo:latest
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mongo.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
-      - "traefik.http.routers.mongo.entrypoints=web"
-      - "traefik.http.routers.mongosecure.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
-      - "traefik.http.routers.mongosecure.entrypoints=websecure"
-      - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
-      # auth middleware -----------------------------------------------
-      - "traefik.http.routers.nginx-gateway.middlewares=auth"
-      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
-      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+      - "traefik.tcp.routers.mongo.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.mongo.entrypoints=mongo"
+      - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
+      - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
     logging:
       driver: "json-file"
       options:
         max-size: "200k"
         max-file: "10"
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
     restart: always
 
 volumes:
