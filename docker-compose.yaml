@@ -73,6 +73,7 @@ services:
         max-size: "200k"
         max-file: "10"
     restart: always
+
   pascal:
     image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
@@ -87,6 +88,10 @@ services:
       - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.pascalsecure.entrypoints=websecure"
       - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.nginx-gateway.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
     logging:
       driver: "json-file"
       options:
@@ -121,6 +126,10 @@ services:
       - "traefik.http.routers.runnersecure.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.nginx-gateway.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
     ports: [ "4411:4411", "9229:9229" ]
     restart: always
 
@@ -136,6 +145,10 @@ services:
       - "traefik.http.routers.mongosecure.rule=Host(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.mongosecure.entrypoints=websecure"
       - "traefik.http.routers.mongosecure.tls.certresolver=fermatresolver"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.nginx-gateway.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
     logging:
       driver: "json-file"
       options:
