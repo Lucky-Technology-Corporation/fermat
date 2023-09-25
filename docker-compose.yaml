@@ -55,7 +55,9 @@ services:
     image: nginx:mainline
     networks:
       - fermat-gateway-network
-    command: /bin/sh -c "echo 'events {} http { server { listen 5552; location / { proxy_pass http://172.17.0.1:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    command: /bin/sh -c "echo 'events {} http { log_format main \'$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"\' ; access_log /var/log/nginx/access.log main; server { listen 5552; location / { proxy_pass http://172.17.0.1:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    volumes:
+      - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
