@@ -48,6 +48,8 @@ services:
     image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
     ports:
       - "2244:2244"
+    networks:
+      - "traefik-network"
     logging:
       driver: "json-file"
       options:
@@ -139,6 +141,8 @@ services:
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
     ports: [ "4411:4411", "9229:9229" ]
+    networks:
+      - "traefik-network"
     restart: always
 
   mongo:
@@ -146,6 +150,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    networks:
+      - "traefik-network"
     volumes:
       - mongo-data:/data/db
     labels:
