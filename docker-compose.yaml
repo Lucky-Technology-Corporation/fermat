@@ -61,15 +61,19 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
-      - "traefik.http.routers.nginx-gateway.entrypoints=websecure"
-      - "traefik.http.routers.nginx-gateway.tls.certresolver=fermatresolver"
-      - "traefik.http.services.nginx-gateway.loadbalancer.server.port=5552"
+      - "traefik.http.routers.nginx-gateway.entrypoints=web"
+      - "traefik.http.routers.nginx-gateway-secure.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.http.routers.nginx-gateway-secure.entrypoints=websecure"
+      - "traefik.http.routers.nginx-gateway-secure.tls.certresolver=fermatresolver"
+      - "traefik.http.services.nginx-gateway-secure.loadbalancer.server.port=5552"
       # auth middleware -----------------------------------------------
       - "traefik.http.routers.nginx-gateway.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
     ports:
       - "5552:5552"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     logging:
       driver: "json-file"
       options:
