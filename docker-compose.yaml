@@ -66,7 +66,6 @@ services:
       - "traefik.http.routers.nginx-gateway-secure.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.nginx-gateway-secure.entrypoints=websecure"
       - "traefik.http.routers.nginx-gateway-secure.tls.certresolver=fermatresolver"
-      - "traefik.http.services.nginx-gateway-secure.loadbalancer.server.port=5552"
       # auth middleware -----------------------------------------------
       - "traefik.http.routers.nginx-gateway.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
