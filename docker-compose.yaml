@@ -28,6 +28,8 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
+    networks:
+      - "traefik-network"
     labels:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
@@ -72,6 +74,8 @@ services:
       - "traefik.http.routers.nginx-gateway-secure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    networks:
+      - "traefik-network"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     logging:
@@ -161,6 +165,10 @@ services:
       timeout: 10s
       retries: 3
     restart: always
+
+networks:
+  traefik-network:
+    driver: bridge
 
 volumes:
   mongo-data:
