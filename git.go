@@ -164,9 +164,10 @@ func CheckIfError(w http.ResponseWriter, err error) {
 }
 
 type CommandRunner struct {
-	err    error
-	dir    string
-	output []byte
+	err      error
+	dir      string
+	output   string
+	exitCode int
 }
 
 func (runner *CommandRunner) Run(name string, args ...string) {
@@ -178,7 +179,9 @@ func (runner *CommandRunner) Run(name string, args ...string) {
 	cmd.Dir = runner.dir
 
 	output, err := cmd.CombinedOutput()
-	runner.output = output
+
+	runner.output = string(output)
+	runner.exitCode = cmd.ProcessState.ExitCode()
 
 	if err != nil {
 		cmdParts := append([]string{name}, args...)
@@ -187,20 +190,53 @@ func (runner *CommandRunner) Run(name string, args ...string) {
 	}
 }
 
+type PushProductionStatus string
+
+const (
+	BuildTriggered PushProductionStatus = "BUILD_TRIGGERED"
+	NoChanges      PushProductionStatus = "NO_CHANGES"
+	Failed         PushProductionStatus = "FAILED"
+)
+
+type PushProductionResponse struct {
+	Status  PushProductionStatus `json:"status"`
+	Message string               `json:"message,omitempty"`
+}
+
 func pushProduction(w http.ResponseWriter, r *http.Request) {
 	commitMessage := fmt.Sprintf("swizzle commit production: %s", time.Now().Format(time.RFC3339))
 
 	runner := &CommandRunner{dir: "code"}
 	runner.Run("git", "add", ".")
 	runner.Run("git", "commit", "-m", commitMessage)
+
+	// Reset the runner because we always want to try a push even if the previous commands errored out.
+	// This is because 'git commit -m "..."' will return exit code 1 if there is nothing to commit.
+	// However, just because master is up-to-date doesn't mean that our release branch is so we should
+	// try doing a push anyways.
+	runner = &CommandRunner{dir: "code"}
 	runner.Run("git", "push", "-o", "nokeycheck", "origin", "master:release")
 
 	if runner.err != nil {
-		http.Error(w, runner.err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteJSONResponseWithHeader(w, http.StatusInternalServerError, &PushProductionResponse{
+			Status:  Failed,
+			Message: runner.err.Error(),
+		})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	// There were no changes so we should notify the caller that no build will be triggered
+	not_build_triggered := strings.Contains(string(runner.output), "Everything up-to-date")
+
+	status := BuildTriggered
+	if not_build_triggered {
+		status = NoChanges
+	}
+
+	WriteJSONResponse(w, &PushProductionResponse{
+		Status: status,
+	})
 }
 
 func mergeMasterIntoRelease() error {
