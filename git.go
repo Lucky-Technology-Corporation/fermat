@@ -227,7 +227,7 @@ func pushProduction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// There were no changes so we should notify the caller that no build will be triggered
-	not_build_triggered := strings.Contains(string(runner.output), "Everything up-to-date")
+	not_build_triggered := strings.Contains(runner.output, "Everything up-to-date")
 
 	status := BuildTriggered
 	if not_build_triggered {
