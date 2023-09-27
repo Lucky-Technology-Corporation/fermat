@@ -33,6 +33,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+      - "traefik.http.routers.api.middlewares=cors-headers"
     logging:
       driver: "json-file"
       options:
@@ -49,6 +50,13 @@ services:
       - "2244:2244"
     networks:
       - "traefik-network"
+    labels:
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
+      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
     logging:
       driver: "json-file"
       options:
@@ -74,6 +82,15 @@ services:
       - "traefik.http.routers.nginx-gateway-secure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+      # CORS
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
+      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
+      - "traefik.http.routers.nginx-gateway.middlewares=cors-headers"
+      - "traefik.http.routers.nginx-gateway-secure.middlewares=cors-headers"
     networks:
       - "traefik-network"
     extra_hosts:
@@ -104,6 +121,15 @@ services:
       - "traefik.http.routers.pascalsecure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+      # CORS
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
+      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
+      - "traefik.http.routers.pascal.middlewares=cors-headers"
+      - "traefik.http.routers.pascalsecure.middlewares=cors-headers"
     logging:
       driver: "json-file"
       options:
@@ -142,6 +168,15 @@ services:
       - "traefik.http.routers.runnersecure.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+      # CORS
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
+      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
+      - "traefik.http.routers.runner.middlewares=cors-headers"
+      - "traefik.http.routers.runnersecure.middlewares=cors-headers"
     ports: [ "4411:4411", "9229:9229" ]
     restart: always
 
