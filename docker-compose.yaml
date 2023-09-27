@@ -202,7 +202,7 @@ services:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mongo.entrypoints=mongo"
       - "traefik.tcp.routers.mongo.tls=true"
-      - "traefik.tcp.routers.mongo.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.mongo.rule=HostSNI(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
       - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
     logging:
