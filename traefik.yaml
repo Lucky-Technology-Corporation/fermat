@@ -5,3 +5,18 @@ certificatesResolvers:
       storage: acme.json
       httpChallenge:
         entryPoint: web
+http:
+  middlewares:
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+          - "OPTIONS"  # Add this
+        accessControlAllowOrigin: "*"
+        accessControlAllowHeaders:
+          - "Cache-Control"
+          - "Content-Type"
+          - "Authorization"
