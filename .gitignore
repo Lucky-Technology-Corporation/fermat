@@ -1,3 +1,4 @@
 .idea
 fermat-linux
 code/
+*.log
