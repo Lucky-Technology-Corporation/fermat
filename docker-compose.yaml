@@ -33,11 +33,10 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
-      - "traefik.http.routers.api.middlewares=cors-headers"
     logging:
       driver: "json-file"
       options:
-        max-size: "20000k"
+        max-size: "200k"
         max-file: "10"
     restart: always
 
@@ -59,20 +58,7 @@ services:
 
   fermat-gateway:
     image: nginx:mainline
-    command: >
-      /bin/sh -c "echo 'events {} http { 
-      log_format main ''$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"'' ; 
-      access_log /var/log/nginx/access.log main; 
-      server { 
-        listen 5552; 
-        location / { 
-          proxy_pass http://host.docker.internal:1234; 
-          proxy_set_header Host $$host; 
-          proxy_set_header X-Real-IP $$remote_addr; 
-          proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; 
-        } 
-      } 
-      }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    command: /bin/sh -c "echo 'events {} http { log_format main ''$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"'' ; access_log /var/log/nginx/access.log main; server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     volumes:
       - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
     labels:
@@ -88,16 +74,6 @@ services:
       - "traefik.http.routers.nginx-gateway-secure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
-      # CORS
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolmaxage=100"
-      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
-      - "traefik.http.routers.nginx-gateway.middlewares=cors-headers"
-      - "traefik.http.routers.nginx-gateway-secure.middlewares=cors-headers"
     networks:
       - "traefik-network"
     extra_hosts:
@@ -128,16 +104,6 @@ services:
       - "traefik.http.routers.pascalsecure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
-      # CORS
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolmaxage=100"
-      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
-      - "traefik.http.routers.pascal.middlewares=cors-headers"
-      - "traefik.http.routers.pascalsecure.middlewares=cors-headers"
     logging:
       driver: "json-file"
       options:
@@ -176,16 +142,6 @@ services:
       - "traefik.http.routers.runnersecure.rule=Host(`runner.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
-      # CORS
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowmethods=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolalloworiginlist=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolmaxage=100"
-      - "traefik.http.middlewares.cors-headers.headers.addvaryheader=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowheaders=*"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolallowcredentials=true"
-      - "traefik.http.middlewares.cors-headers.headers.accesscontrolexposeheaders=Content-Length"
-      - "traefik.http.routers.runner.middlewares=cors-headers"
-      - "traefik.http.routers.runnersecure.middlewares=cors-headers"
     ports: [ "4411:4411", "9229:9229" ]
     restart: always
 
@@ -201,7 +157,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mongo.entrypoints=mongo"
-      - "traefik.tcp.routers.mongo.tls=true"
       - "traefik.tcp.routers.mongo.rule=HostSNI(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
       - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
