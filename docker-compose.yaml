@@ -28,6 +28,8 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
+    networks:
+      - "traefik-network"
     labels:
       - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.http.routers.api.service=api@internal"
@@ -46,6 +48,8 @@ services:
     image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
     ports:
       - "2244:2244"
+    networks:
+      - "traefik-network"
     logging:
       driver: "json-file"
       options:
@@ -55,7 +59,6 @@ services:
 
   fermat-gateway:
     image: nginx:mainline
-    network_mode: "host"
     command: /bin/sh -c "echo 'events {} http { log_format main ''$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"'' ; access_log /var/log/nginx/access.log main; server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     volumes:
       - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
@@ -72,6 +75,8 @@ services:
       - "traefik.http.routers.nginx-gateway-secure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    networks:
+      - "traefik-network"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     logging:
@@ -118,6 +123,8 @@ services:
       SWIZZLE_ENV: test
       GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
       PORT: 4411
+    networks:
+      - "traefik-network"
     volumes:
       - $HOME/code:/swizzle-data/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
@@ -142,12 +149,14 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    networks:
+      - "traefik-network"
     volumes:
       - mongo-data:/data/db
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mongo.entrypoints=mongo"
-      - "traefik.tcp.routers.mongo.rule=HostSNI(`mongo.${FERMAT_SUBDOMAIN}.swizzle.run`)"
+      - "traefik.tcp.routers.mongo.rule=HostSNI(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
       - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
       - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
     logging:
@@ -155,12 +164,14 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
-    healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     restart: always
+
+networks:
+  traefik-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   mongo-data:
