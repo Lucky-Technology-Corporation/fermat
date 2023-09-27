@@ -110,6 +110,8 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    networks:
+      - "traefik-network"
     ports:
       - "3000:3000"
     restart: unless-stopped
