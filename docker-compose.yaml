@@ -12,7 +12,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
-#      - "--entrypoints.mongo.address=:27017"
+      - "--entrypoints.mongo.address=:27017"
       - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
       - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
       - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
@@ -155,19 +155,17 @@ services:
     volumes:
       - mongo-data:/data/db
     labels:
-#      - "traefik.enable=true"
-#      - "traefik.tcp.routers.mongo.entrypoints=mongo"
-#      - "traefik.tcp.routers.mongo.rule=HostSNI(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
-#      - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
-#      - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.mongo.entrypoints=mongo"
+      - "traefik.tcp.routers.mongo.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
+      - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
     logging:
       driver: "json-file"
       options:
         max-size: "200k"
         max-file: "10"
     restart: always
-    ports:
-      - "27017:27017"
 
 networks:
   traefik-network:
