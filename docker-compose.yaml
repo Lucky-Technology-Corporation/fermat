@@ -13,7 +13,6 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.mongo.address=:27017"
-      - "--entrypoints.mongo.address=:27017/udp"
       - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
       - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
       - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
