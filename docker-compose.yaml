@@ -59,7 +59,6 @@ services:
 
   fermat-gateway:
     image: nginx:mainline
-    network_mode: "host"
     command: /bin/sh -c "echo 'events {} http { log_format main ''$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"'' ; access_log /var/log/nginx/access.log main; server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     volumes:
       - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
@@ -124,6 +123,8 @@ services:
       SWIZZLE_ENV: test
       GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
       PORT: 4411
+    networks:
+      - "traefik-network"
     volumes:
       - $HOME/code:/swizzle-data/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
@@ -141,8 +142,6 @@ services:
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
     ports: [ "4411:4411", "9229:9229" ]
-    networks:
-      - "traefik-network"
     restart: always
 
   mongo:
@@ -165,11 +164,6 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
-    healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     restart: always
 
 networks:
