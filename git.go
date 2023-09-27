@@ -201,6 +201,7 @@ const (
 type PushProductionResponse struct {
 	Status  PushProductionStatus `json:"status"`
 	Message string               `json:"message,omitempty"`
+	Commit  string               `json:"commit,omitempty"`
 }
 
 func pushProduction(w http.ResponseWriter, r *http.Request) {
@@ -229,6 +230,18 @@ func pushProduction(w http.ResponseWriter, r *http.Request) {
 	// There were no changes so we should notify the caller that no build will be triggered
 	not_build_triggered := strings.Contains(runner.output, "Everything up-to-date")
 
+	// This shouldn't fail, but just in case we'll check for an error
+	runner.Run("git", "rev-parse", "HEAD")
+	if runner.err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		WriteJSONResponseWithHeader(w, http.StatusInternalServerError, &PushProductionResponse{
+			Status:  Failed,
+			Message: runner.err.Error(),
+		})
+		return
+	}
+
+	commit := strings.TrimSpace(runner.output)
 	status := BuildTriggered
 	if not_build_triggered {
 		status = NoChanges
@@ -236,6 +249,7 @@ func pushProduction(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSONResponse(w, &PushProductionResponse{
 		Status: status,
+		Commit: commit,
 	})
 }
 
