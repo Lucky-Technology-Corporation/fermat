@@ -160,7 +160,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     restart: always
 
