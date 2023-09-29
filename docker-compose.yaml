@@ -23,7 +23,6 @@ services:
       - "80:80"
       - "443:443"
       - "8080:8080"
-      - "27017:27017"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
@@ -154,15 +153,11 @@ services:
       MONGODB_EXTRA_FLAGS: --tlsMode=requireTLS --tlsCertificateKeyFile=/etc/ssl/mongodb.pem
     networks:
       - "traefik-network"
+    ports:
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
       - ./mongodb.pem:/etc/ssl/mongodb.pem
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.mongo.entrypoints=mongo"
-      - "traefik.tcp.routers.mongo.rule=HostSNI(`db.${FERMAT_SUBDOMAIN}.swizzle.run`)"
-      - "traefik.tcp.routers.mongo.tls.certresolver=fermatresolver"
-      - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
     logging:
       driver: "json-file"
       options:
