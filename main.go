@@ -32,19 +32,25 @@ func main() {
 		log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
 	}
 
-	log.Println("[Step 3] Running docker compose...")
+	log.Println("[Step 3] Setup Mongo Certificate for TLS support...")
+	err = CreateAndSaveMongoCert()
+	if err != nil {
+		log.Fatalf("[Error] Failed to create and save certificate: %v", err)
+	}
+
+	log.Println("[Step 4] Running docker compose...")
 	err = runDockerCompose()
 	if err != nil {
 		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	log.Println("[Step 4] Writing secrets to file...")
+	log.Println("[Step 5] Writing secrets to file...")
 	err = saveInitialSecrets()
 	if err != nil {
 		log.Fatalf("[Error] Failed to save initial secrets: %v", err)
 	}
 
-	log.Println("[Step 5] Setting up HTTP server...")
+	log.Println("[Step 6] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
 	signals := make(chan os.Signal, 1)

@@ -150,10 +150,13 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: main
+      MONGODB_EXTRA_FLAGS: --tlsMode=requireTLS --tlsCertificateKeyFile=/etc/ssl/mongodb.pem
     networks:
       - "traefik-network"
     volumes:
       - mongo-data:/data/db
+      - ./mongodb.pem:/etc/ssl/mongodb.pem
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mongo.entrypoints=mongo"
