@@ -145,11 +145,16 @@ services:
 
   mongo:
     image: mongo:latest
+    command:
+      - "--bind_ip_all"
+      - "--tlsMode"
+      - "requireTLS"
+      - "--tlsCertificateKeyFile"
+      - "/etc/ssl/mongodb.pem"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: main
-      MONGODB_EXTRA_FLAGS: --tlsMode=requireTLS --tlsCertificateKeyFile=/etc/ssl/mongodb.pem
     networks:
       - "traefik-network"
     ports:
