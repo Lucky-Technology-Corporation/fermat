@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"log"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,11 +33,17 @@ func GenerateAndSaveSelfSignedCert(certPath string, keyPath string, pemPath stri
 		return err
 	}
 
+	ipAddress := net.ParseIP(os.Getenv("HOST_IP_ADDRESS"))
+	if ipAddress == nil {
+		log.Printf("failed to parse IP from euler... (provided address: %s\n", os.Getenv("HOST_IP_ADDRESS"))
+	}
+
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"MongoDB"},
 		},
+		IPAddresses:           []net.IP{ipAddress},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
