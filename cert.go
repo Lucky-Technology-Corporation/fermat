@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"math/big"
 	"net"
@@ -38,11 +39,17 @@ func GenerateAndSaveSelfSignedCert(certPath string, keyPath string, pemPath stri
 		log.Printf("failed to parse IP from euler... (provided address: %s\n", os.Getenv("HOST_IP_ADDRESS"))
 	}
 
+	subdomain := os.Getenv("FERMAT_SUBDOMAIN")
+	domain := os.Getenv("DOMAIN")
+	mongoDNSName1 := fmt.Sprintf("%s.%s", subdomain, domain)
+	mongoDNSName2 := fmt.Sprintf("db.%s.%s", subdomain, domain)
+
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"MongoDB"},
 		},
+		DNSNames:              []string{mongoDNSName1, mongoDNSName2},
 		IPAddresses:           []net.IP{ipAddress},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
