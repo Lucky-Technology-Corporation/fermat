@@ -1,32 +1,180 @@
 version: '3.7'
 
 services:
-  theia:
-    image: theia-test:latest
+  traefik:
+    image: traefik:v3.0.0-beta3
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--log.level=DEBUG"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
+      - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
+      - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
+      - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.fermatresolver.acme.eab.kid=${ZERO_SSL_KID}"
+      - "--certificatesresolvers.fermatresolver.acme.eab.hmacEncoded=${ZERO_SSL_HMAC_KEY}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./zero_ssl:/zero_ssl"
+    networks:
+      - "traefik-network"
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls.certresolver=fermatresolver"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+  einstein:
+    environment:
+      API_KEY: ${API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+    image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
+    ports:
+      - "2244:2244"
+    networks:
+      - "traefik-network"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+  fermat-gateway:
+    image: nginx:mainline
+    command: /bin/sh -c "echo 'events {} http { log_format main ''$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\"'' ; access_log /var/log/nginx/access.log main; server { listen 5552; location / { proxy_pass http://host.docker.internal:1234; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    volumes:
+      - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.nginx-gateway.entrypoints=web"
+      - "traefik.http.routers.nginx-gateway-secure.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.nginx-gateway-secure.entrypoints=websecure"
+      - "traefik.http.routers.nginx-gateway-secure.tls.certresolver=fermatresolver"
+      - "traefik.http.services.nginx-gateway-secure.loadbalancer.server.port=5552"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.nginx-gateway.middlewares=auth"
+      - "traefik.http.routers.nginx-gateway-secure.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    networks:
+      - "traefik-network"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+  pascal:
+    image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
+      - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.pascal.entrypoints=web"
+      - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.pascalsecure.entrypoints=websecure"
+      - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
+      # auth middleware -----------------------------------------------
+      - "traefik.http.routers.pascal.middlewares=auth"
+      - "traefik.http.routers.pascalsecure.middlewares=auth"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
+      - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      - "traefik-network"
     ports:
       - "3000:3000"
     restart: unless-stopped
+
   nodemon-server:
     image: node:18
     working_dir: /swizzle-data/code
     environment:
+      SWIZZLE_SUPER_SECRET: ${SWIZZLE_SUPER_SECRET}
+      SWIZZLE_PROJECT_NAME: ${SWIZZLE_PROJECT_NAME}
+      SWIZZLE_ENV: test
+      GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
       PORT: 4411
+    networks:
+      - "traefik-network"
     volumes:
       - $HOME/code:/swizzle-data/code
-    command: sh -c "npm install && npx nodemon --inspect server.js >> /swizzle-data/code/app.log 2>&1"
-    ports: ["4411:4411", "9229:9229"]
+      - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
+    command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.runner.rule=Host(`api.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.rule=Host(`api.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.runnersecure.entrypoints=websecure"
+      - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+    ports: [ "4411:4411", "9229:9229" ]
     restart: always
+
   mongo:
+    image: mongo:latest
+    command:
+      - "--bind_ip_all"
+      - "--tlsMode"
+      - "requireTLS"
+      - "--tlsCertificateKeyFile"
+      - "/etc/ssl/mongodb.pem"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    image: mongo:latest
+      MONGO_INITDB_DATABASE: main
+    networks:
+      - "traefik-network"
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+      - ./mongodb.pem:/etc/ssl/mongodb.pem
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20000k"
+        max-file: "10"
     restart: always
+
+networks:
+  traefik-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
 volumes:
   mongo-data:
