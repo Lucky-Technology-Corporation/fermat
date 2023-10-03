@@ -145,7 +145,12 @@ services:
 
   mongo:
     image: mongo:latest
-    command: ["mongod", "--bind_ip_all", "--tlsMode", "requireTLS", "--tlsCertificateKeyFile", "/etc/ssl/mongodb.pem", "--eval", "let dbInit = db.getSiblingDB('main'); dbInit.createCollection('_swizzle_init'); dbInit._swizzle_init.insert({ key: 'value' });"]
+    command:
+      - "--bind_ip_all"
+      - "--tlsMode"
+      - "requireTLS"
+      - "--tlsCertificateKeyFile"
+      - "/etc/ssl/mongodb.pem"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
