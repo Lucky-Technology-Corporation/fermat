@@ -6,7 +6,7 @@ steps:
 
   # Upload the built application to a Google Cloud Storage bucket
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'fermat-linux', 'docker-compose.yaml', 'gs://swizzle_scripts_$PROFILE']
+    args: ['cp', 'fermat-linux', 'docker-compose.yaml', 'gs://swizzle_scripts_$_PROFILE']
     id: upload
 tags:
   - fermat
