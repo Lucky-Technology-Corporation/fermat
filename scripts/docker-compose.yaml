@@ -162,6 +162,7 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./mongodb.pem:/etc/ssl/mongodb.pem
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     logging:
       driver: "json-file"
       options:
