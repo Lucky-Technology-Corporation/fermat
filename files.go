@@ -71,6 +71,22 @@ func tableOfContents(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func tableOfHelpers(w http.ResponseWriter, r *http.Request) {
+	home, ok := os.LookupEnv("HOME")
+	if !ok {
+		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
+		return
+	}
+	root := filepath.Join(home, "code/user-helpers")
+	result, err := listDir(root)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
 func tableOfFiles(w http.ResponseWriter, r *http.Request) {
 	home, ok := os.LookupEnv("HOME")
 	if !ok {
