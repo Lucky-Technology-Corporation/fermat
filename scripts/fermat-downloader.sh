@@ -60,7 +60,7 @@ REPO_DIR="$HOME/code"
 REPO_NAME="swizzle-webserver-template"
 echo "[INFO] Attempting to clone '$REPO_NAME' from Google Cloud Source Repositories..."
 mkdir -p "$REPO_DIR"
-if gcloud source repos clone "$REPO_NAME" "$REPO_DIR" --project="$GCP_PROJECT" --quiet; then
+if gcloud source repos clone "$REPO_NAME" "$REPO_DIR" --project="swizzle-prod" --quiet; then
     echo "[SUCCESS] '$REPO_NAME' has been successfully cloned to $REPO_DIR."
 else
     echo "[ERROR] Failed to clone '$REPO_NAME'."
