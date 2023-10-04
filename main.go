@@ -96,7 +96,11 @@ func setupHTTPServer() error {
 	r.HandleFunc("/table_of_contents", tableOfContents)
 	r.HandleFunc("/table_of_helpers", tableOfHelpers)
 	r.HandleFunc("/table_of_files", tableOfFiles)
+
+	//Get file contents
 	r.HandleFunc("/code/file_contents", fileContents)
+	//Write file contents
+	r.HandleFunc("/code/write_file", writeFile)
 
 	r.Get("/spoof_jwt", spoofJwt)
 
