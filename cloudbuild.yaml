@@ -4,9 +4,9 @@ steps:
     entrypoint: 'bash'
     args: ['-c', 'GOOS=linux GOARCH=amd64 go build -o fermat-linux .']
 
-  # Upload the built application to a Google Cloud Storage bucket
+  # Upload the built application, docker-compose file, and mongo init script to a Google Cloud Storage bucket
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'fermat-linux', 'docker-compose.yaml', 'gs://swizzle_scripts_$_PROFILE']
+    args: ['cp', 'fermat-linux', './scripts/docker-compose.yaml', './scripts/mongo-init.js',  'gs://swizzle_scripts_$_PROFILE']
     id: upload
 tags:
   - fermat
