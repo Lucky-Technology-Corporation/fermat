@@ -128,6 +128,48 @@ func fileContents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type WriteFileRequest struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
+
+func writeFile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
+	var fileRequest WriteFileRequest
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&fileRequest)
+	if err != nil {
+		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
+		return
+	}
+
+	file, err := os.Create(fileRequest.Path) // Create the file (or overwrite if it exists)
+	if err != nil {
+		http.Error(w, "Failed to create file", http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Printf("Failed to close file: %v", cerr)
+		}
+	}()
+
+	_, err = file.WriteString(fileRequest.Content)
+	if err != nil {
+		http.Error(w, "Failed to write to file", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("File written successfully!"))
+	return
+}
+
 func packageJSON(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Not Found", http.StatusNotFound)
