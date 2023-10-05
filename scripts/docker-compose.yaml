@@ -75,7 +75,7 @@ services:
     networks:
       - "traefik-network"
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:127.0.0.1"
     logging:
       driver: "json-file"
       options:
