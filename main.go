@@ -21,7 +21,7 @@ func main() {
 	log.Println("Initializing fermat...")
 
 	log.Println("[Step 1] Downloading docker-compose file...")
-	err := downloadFileFromGoogleBucket("swizzle_scripts", "docker-compose.yaml", "docker-compose.yaml")
+	err := downloadFileFromGoogleBucket(os.Getenv("BUCKET_NAME"), "docker-compose.yaml", "docker-compose.yaml")
 	if err != nil {
 		log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
 	}
