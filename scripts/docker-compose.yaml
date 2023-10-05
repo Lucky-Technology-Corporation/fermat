@@ -28,7 +28,7 @@ services:
     networks:
       - "traefik-network"
     labels:
-      - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.api.rule=Host(`traefik.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls.certresolver=fermatresolver"
     logging:
@@ -61,9 +61,9 @@ services:
       - ./nginx_logs:/var/log/nginx  # Mount host directory to container log directory
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.nginx-gateway.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.nginx-gateway.entrypoints=web"
-      - "traefik.http.routers.nginx-gateway-secure.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.nginx-gateway-secure.rule=Host(`fermat.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.nginx-gateway-secure.entrypoints=websecure"
       - "traefik.http.routers.nginx-gateway-secure.tls.certresolver=fermatresolver"
       - "traefik.http.services.nginx-gateway-secure.loadbalancer.server.port=5552"
@@ -92,9 +92,9 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.pascal.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.pascal.entrypoints=web"
-      - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.pascalsecure.rule=Host(`pascal.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.pascalsecure.entrypoints=websecure"
       - "traefik.http.routers.pascalsecure.tls.certresolver=fermatresolver"
       # auth middleware -----------------------------------------------
@@ -135,9 +135,9 @@ services:
         max-file: "10"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.runner.rule=Host(`api.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.runner.rule=Host(`api.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.runner.entrypoints=web"
-      - "traefik.http.routers.runnersecure.rule=Host(`api.${FERMAT_SUBDOMAIN}.{DOMAIN}`)"
+      - "traefik.http.routers.runnersecure.rule=Host(`api.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
     ports: [ "4411:4411", "9229:9229" ]
