@@ -42,7 +42,7 @@ services:
     environment:
       API_KEY: ${API_KEY}
       JWT_SECRET: ${JWT_SECRET}
-    image: us-central1-docker.pkg.dev/swizzle-prod/einstein/einstein:latest
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT}/einstein/einstein:latest
     ports:
       - "2244:2244"
     networks:
@@ -84,7 +84,7 @@ services:
     restart: always
 
   pascal:
-    image: us-central1-docker.pkg.dev/swizzle-prod/pascal/pascal:latest
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT}/pascal/pascal:latest
     volumes:
       - $HOME/code:$HOME/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
