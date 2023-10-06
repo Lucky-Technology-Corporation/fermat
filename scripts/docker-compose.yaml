@@ -86,7 +86,7 @@ services:
   pascal:
     image: us-central1-docker.pkg.dev/${GCP_PROJECT}/pascal/pascal:latest
     volumes:
-      - $HOME/code:$HOME/code
+      - $HOME/code:swizzle/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /home/root/.config/gcloud/application_default_credentials.json
@@ -115,7 +115,7 @@ services:
 
   nodemon-server:
     image: node:18
-    working_dir: /swizzle-data/code
+    working_dir: /swizzle/code
     environment:
       SWIZZLE_SUPER_SECRET: ${SWIZZLE_SUPER_SECRET}
       SWIZZLE_PROJECT_NAME: ${SWIZZLE_PROJECT_NAME}
@@ -125,7 +125,7 @@ services:
     networks:
       - "traefik-network"
     volumes:
-      - $HOME/code:/swizzle-data/code
+      - $HOME/code:swizzle/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
     logging:
