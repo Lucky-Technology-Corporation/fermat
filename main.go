@@ -63,6 +63,9 @@ func main() {
 		done <- true
 	}()
 
+	// Start Health Service Runner
+	go HealthStatusServiceRunner()
+
 	log.Println("========================================")
 	log.Println("Fermat is now running!")
 
@@ -109,6 +112,8 @@ func setupHTTPServer() error {
 
 	r.Get("/secrets", GetSecrets)
 	r.Patch("/secrets", UpdateSecrets)
+
+	r.Get("/services/health", HealthServiceHandler)
 
 	r.Post("/update_repo", updateRepo)
 	r.Post("/refresh", func(w http.ResponseWriter, r *http.Request) {
