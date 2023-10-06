@@ -127,7 +127,7 @@ services:
     volumes:
       - $HOME/code:/swizzle/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
-    command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle-data/code/app.log 2>&1"
+    command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle/code/app.log 2>&1"
     logging:
       driver: "json-file"
       options:
