@@ -102,6 +102,9 @@ services:
       - "traefik.http.routers.pascalsecure.middlewares=auth"
       - "traefik.http.middlewares.auth.forwardauth.address=http://einstein:2244/check"
       - "traefik.http.middlewares.auth.forwardauth.trustForwardHeader=true"
+      # Remove the X-Content-Type-Options header
+      - "traefik.http.routers.pascalsecure.middlewares=remove-x-content-type-options"
+      - "traefik.http.middlewares.remove-x-content-type-options.headers.customresponseheaders.X-Content-Type-Options="
     logging:
       driver: "json-file"
       options:
