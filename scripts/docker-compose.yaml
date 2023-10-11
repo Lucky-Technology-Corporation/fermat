@@ -155,7 +155,7 @@ services:
       - "traefik-network"
     volumes:
       - $HOME/code/frontend:/swizzle/code
-    command: sh -c "npm install react-scripts start >> /swizzle/code/app.log 2>&1"
+    command: sh -c "npm install && react-scripts start >> /swizzle/code/app.log 2>&1"
     logging:
       driver: "json-file"
       options:
