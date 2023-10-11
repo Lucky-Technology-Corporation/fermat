@@ -163,12 +163,12 @@ services:
         max-file: "10"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.runner.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.runner.entrypoints=web"
-      - "traefik.http.routers.runnersecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.runnersecure.entrypoints=websecure"
-      - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
-    ports: [ "4545:3000" ]
+      - "traefik.http.routers.frontend.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontendsecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.frontendsecure.entrypoints=websecure"
+      - "traefik.http.routers.frontendsecure.tls.certresolver=fermatresolver"
+    ports: [ "4545:4545" ]
     restart: always
 
   mongo:
