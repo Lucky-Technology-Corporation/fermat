@@ -128,7 +128,7 @@ services:
     networks:
       - "traefik-network"
     volumes:
-      - $HOME/code:/swizzle/code
+      - $HOME/code/backend:/swizzle/code
       - $HOME/.config/gcloud/application_default_credentials.json:/home/root/.config/gcloud/application_default_credentials.json
     command: sh -c "npm install && npx nodemon --inspect=0.0.0.0:9229 server.js >> /swizzle/code/app.log 2>&1"
     logging:
@@ -144,6 +144,31 @@ services:
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
     ports: [ "4411:4411", "9229:9229" ]
+    restart: always
+
+  frontend:
+    image: node:18
+    working_dir: /swizzle/code
+    environment:
+      PORT: 4545
+    networks:
+      - "traefik-network"
+    volumes:
+      - $HOME/code/frontend:/swizzle/code
+    command: sh -c "npm install react-scripts start >> /swizzle/code/app.log 2>&1"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.runner.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.runner.entrypoints=web"
+      - "traefik.http.routers.runnersecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.runnersecure.entrypoints=websecure"
+      - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
+    ports: [ "4545:3000" ]
     restart: always
 
   mongo:
