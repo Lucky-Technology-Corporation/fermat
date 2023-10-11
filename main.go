@@ -93,9 +93,7 @@ func setupHTTPServer() error {
 
 	// handlers to show default code package.json
 	r.HandleFunc("/code/package.json", packageJSON)
-	r.HandleFunc("/table_of_contents", tableOfContents)
-	r.HandleFunc("/table_of_helpers", tableOfHelpers)
-	r.HandleFunc("/table_of_files", tableOfFiles)
+	r.HandleFunc("/code", getFileList)
 
 	//Get file contents
 	r.HandleFunc("/code/file_contents", fileContents)

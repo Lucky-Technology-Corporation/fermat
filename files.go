@@ -55,45 +55,16 @@ func listDir(root string) (*File, error) {
 	return file, nil
 }
 
-func tableOfContents(w http.ResponseWriter, r *http.Request) {
+func getFileList(w http.ResponseWriter, r *http.Request) {
 	home, ok := os.LookupEnv("HOME")
 	if !ok {
 		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
 		return
 	}
-	root := filepath.Join(home, "code/user-dependencies")
-	result, err := listDir(root)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
 
-func tableOfHelpers(w http.ResponseWriter, r *http.Request) {
-	home, ok := os.LookupEnv("HOME")
-	if !ok {
-		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
-		return
-	}
-	root := filepath.Join(home, "code/user-helpers")
-	result, err := listDir(root)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
+	filePathFromQueryString := r.URL.Query().Get("path")
 
-func tableOfFiles(w http.ResponseWriter, r *http.Request) {
-	home, ok := os.LookupEnv("HOME")
-	if !ok {
-		http.Error(w, "HOME environment variable not found", http.StatusInternalServerError)
-		return
-	}
-	root := filepath.Join(home, "code/user-hosting")
+	root := filepath.Join(home, "code"+filePathFromQueryString)
 	result, err := listDir(root)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
