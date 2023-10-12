@@ -92,7 +92,8 @@ func setupHTTPServer() error {
 	r.Use(corsMiddleware)
 
 	// handlers to show default code package.json
-	r.HandleFunc("/code/package.json", packageJSON)
+	r.HandleFunc("/code/backend/package.json", packageJSON)
+	r.HandleFunc("/code/frontend/package.json", packageJSONReact)
 	r.HandleFunc("/code", getFileList)
 
 	//Get file contents

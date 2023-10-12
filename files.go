@@ -141,13 +141,36 @@ func writeFile(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func packageJSONReact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
+	file, err := os.Open("code/frontend/package.json")
+	if err != nil {
+		http.Error(w, "Failed to open file", http.StatusNotFound)
+		return
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Printf("Failed to close file: %v", cerr)
+		}
+	}()
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "Failed to write file content", http.StatusInternalServerError)
+	}
+}
+
 func packageJSON(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
-	file, err := os.Open("code/package.json")
+	file, err := os.Open("code/backend/package.json")
 	if err != nil {
 		http.Error(w, "Failed to open file", http.StatusNotFound)
 		return
