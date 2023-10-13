@@ -95,6 +95,7 @@ func setupHTTPServer() error {
 	r.HandleFunc("/code/backend/package.json", packageJSON)
 	r.HandleFunc("/code/frontend/package.json", packageJSONReact)
 	r.HandleFunc("/code", getFileList)
+	r.HandleFunc("/code/delete", deleteFile)
 
 	//Get file contents
 	r.HandleFunc("/code/file_contents", fileContents)

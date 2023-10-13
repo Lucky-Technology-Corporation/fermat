@@ -74,6 +74,25 @@ func getFileList(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func deleteFile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
+	path := r.URL.Query().Get("path")
+
+	err := os.RemoveAll(path)
+	if err != nil {
+		http.Error(w, "Failed to delete file", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("File deleted successfully!"))
+	return
+}
+
 func fileContents(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Not Found", http.StatusNotFound)
