@@ -102,7 +102,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-API-KEY", apiKey)
+	req.Header.Set("X-Api-Key", apiKey)
 
 	// Send the request
 	resp, err := http.DefaultClient.Do(req)
