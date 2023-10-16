@@ -18,12 +18,11 @@ services:
       - "--certificatesresolvers.fermatresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.fermatresolver.acme.eab.kid=${ZERO_SSL_KID}"
       - "--certificatesresolvers.fermatresolver.acme.eab.hmacEncoded=${ZERO_SSL_HMAC_KEY}"
-      - "--entrypoints.custom.address=:4545"
+      - "--entrypoints.wss.address=:4545"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
-      - "4545:4545"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
@@ -166,12 +165,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.frontend.entrypoints=web,custom"
+      - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.routers.frontendsecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.frontendsecure.entrypoints=websecure,custom" 
+      - "traefik.http.routers.frontendsecure.entrypoints=websecure" 
       - "traefik.http.routers.frontendsecure.tls.certresolver=fermatresolver"
       - "traefik.http.routers.frontend-websocket.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`) && Path(`/ws`)" 
-      - "traefik.http.routers.frontend-websocket.entrypoints=custom" 
+      - "traefik.http.routers.frontend-websocket.entrypoints=wss" 
       - "traefik.http.routers.frontend-websocket.tls.certresolver=fermatresolver" 
     ports: [ "4545:4545" ]
     restart: always
