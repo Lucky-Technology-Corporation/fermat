@@ -51,9 +51,9 @@ func HealthStatusServiceRunner() {
 		interval = 60
 	}
 
-	endpoint := os.Getenv("HEALTH_CHECK_ENPOINT_URL")
+	endpoint := os.Getenv("HEALTH_CHECK_ENDPOINT_URL")
 	if endpoint == "" {
-		log.Println("ERROR: HEALTH_CHECK_ENPOINT_URL is not set.")
+		log.Println("ERROR: HEALTH_CHECK_ENDPOINT_URL is not set.")
 		return
 	}
 
