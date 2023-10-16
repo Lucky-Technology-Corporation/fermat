@@ -57,9 +57,9 @@ func HealthStatusServiceRunner() {
 		return
 	}
 
-	apiKey := os.Getenv("X_API_KEY")
+	apiKey := os.Getenv("API_KEY")
 	if apiKey == "" {
-		log.Println("ERROR: X_API_KEY is not set.")
+		log.Println("ERROR: API_KEY is not set.")
 		return
 	}
 
