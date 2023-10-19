@@ -35,7 +35,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     restart: always
 
@@ -51,7 +51,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     restart: always
 
@@ -80,7 +80,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     restart: always
 
@@ -109,7 +109,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     networks:
       - "traefik-network"
@@ -135,7 +135,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     labels:
       - "traefik.enable=true"
@@ -160,7 +160,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "200k"
+        max-size: "20000k"
         max-file: "10"
     labels:
       - "traefik.enable=true"
