@@ -12,6 +12,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web4545.address=:4545"
       - "--certificatesresolvers.fermatresolver.acme.email=contact@swizzle.run"
       - "--certificatesresolvers.fermatresolver.acme.caServer=https://acme.zerossl.com/v2/DV90"
       - "--certificatesresolvers.fermatresolver.acme.storage=/zero_ssl/acme.json"
@@ -21,6 +22,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "4545:4545"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
@@ -149,7 +151,7 @@ services:
     image: node:18
     working_dir: /swizzle/code
     environment:
-      PORT: 4545
+      PORT: 4545  # Set the default application port to 4545
     networks:
       - "traefik-network"
     volumes:
@@ -162,12 +164,20 @@ services:
         max-file: "10"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.routers.frontendsecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.frontendsecure.entrypoints=websecure"
-      - "traefik.http.routers.frontendsecure.tls.certresolver=fermatresolver"
-    ports: [ "127.0.0.1:4545:4545" ]
+      # Router for port 443 (HTTPS)
+      - "traefik.http.routers.frontend-443.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.frontend-443.entrypoints=websecure"
+      - "traefik.http.routers.frontend-443.tls=true"
+      - "traefik.http.routers.frontend-443.tls.certresolver=fermatresolver"
+      - "traefik.http.services.frontend-443.loadbalancer.server.port=4545"
+      # Router for port 4545 (force HTTPS)
+      - "traefik.http.routers.frontend-4545.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.frontend-4545.entrypoints=websecure"
+      - "traefik.http.routers.frontend-4545.tls=true"
+      - "traefik.http.routers.frontend-4545.tls.certresolver=fermatresolver"
+      - "traefik.http.services.frontend-4545.loadbalancer.server.port=4545"
+    ports:
+      - "127.0.0.1:4545:4545"  # Expose port 4545 for local access
     restart: always
 
   mongo:
