@@ -21,7 +21,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./zero_ssl:/zero_ssl"
@@ -44,7 +43,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
     image: us-central1-docker.pkg.dev/${GCP_PROJECT}/einstein/einstein:latest
     ports:
-      - "2244:2244"
+      - "127.0.0.1:2244:2244"
     networks:
       - "traefik-network"
     logging:
@@ -113,7 +112,7 @@ services:
     networks:
       - "traefik-network"
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
 
   nodemon-server:
@@ -143,7 +142,7 @@ services:
       - "traefik.http.routers.runnersecure.rule=Host(`api.${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.runnersecure.entrypoints=websecure"
       - "traefik.http.routers.runnersecure.tls.certresolver=fermatresolver"
-    ports: [ "4411:4411", "9229:9229" ]
+    ports: [ "127.0.0.1:4411:4411", "127.0.0.1:9229:9229" ]
     restart: always
 
   frontend:
@@ -168,7 +167,7 @@ services:
       - "traefik.http.routers.frontendsecure.rule=Host(`${FERMAT_SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.frontendsecure.entrypoints=websecure"
       - "traefik.http.routers.frontendsecure.tls.certresolver=fermatresolver"
-    ports: [ "4545:4545" ]
+    ports: [ "127.0.0.1:4545:4545" ]
     restart: always
 
   mongo:
