@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -134,14 +135,19 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 // DockerContainer represents details about a running Docker container
 type DockerContainer struct {
-	ContainerID string
-	Image       string
-	Command     string
-	Created     string
-	Status      string
-	Ports       string
-	Names       string
-	Health      HealthStatus
+	ContainerID string       `json:"container_id"`
+	Image       string       `json:"image"`
+	Command     string       `json:"command"`
+	Created     string       `json:"created"`
+	Status      string       `json:"status"`
+	Ports       string       `json:"ports"`
+	Names       string       `json:"names"`
+	Health      HealthStatus `json:"health"`
+}
+
+type VMHealth struct {
+	Containers []DockerContainer `json:"containers"`
+	CertReady  bool              `json:"cert_ready"`
 }
 
 // GetDockerPS fetches running Docker container details using the "docker ps" command.
@@ -176,4 +182,42 @@ func GetDockerPS() ([]DockerContainer, error) {
 	}
 
 	return containers, nil
+}
+
+func CheckZeroSSL() (bool, int64, error) {
+	// Get the current working directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Error getting current working directory: %v\n", err)
+		return false, 0, err
+	}
+
+	// Construct the absolute file path based on the current working directory
+	filePath := filepath.Join(currentDir, "zero_ssl/acme.json")
+
+	sizeThreshold := int64(50 * 1024) // 50 KB in bytes
+
+	return CheckFile(filePath, sizeThreshold)
+}
+
+// CheckFile checks if a file exists, its size, and if it exceeds a certain size threshold.
+func CheckFile(filePath string, sizeThreshold int64) (bool, int64, error) {
+	// Check if the file exists
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, 0, nil // File does not exist
+		}
+		return false, 0, err // Error occurred while checking the file
+	}
+
+	// Check the size of the file
+	fileSize := fileInfo.Size()
+
+	// Check if the file size exceeds the threshold
+	if fileSize > sizeThreshold {
+		return true, fileSize, nil // File exists and meets the size requirement
+	}
+
+	return false, fileSize, nil // File exists but does not meet the size requirement
 }
