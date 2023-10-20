@@ -126,7 +126,18 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
-	err = WriteJSONResponse(w, containers)
+	certReady, _, err := CheckZeroSSL()
+	if err != nil {
+		log.Printf("tls cert not set: %s \n", err)
+		certReady = false
+	}
+
+	currentHealthStatus := VMHealth{
+		Containers: containers,
+		CertReady:  certReady,
+	}
+
+	err = WriteJSONResponse(w, currentHealthStatus)
 	if err != nil {
 		log.Printf("failed to write json response: %s \n", err)
 		http.Error(w, "failed to write json response", http.StatusInternalServerError)
@@ -185,39 +196,34 @@ func GetDockerPS() ([]DockerContainer, error) {
 }
 
 func CheckZeroSSL() (bool, int64, error) {
-	// Get the current working directory
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error getting current working directory: %v\n", err)
 		return false, 0, err
 	}
 
-	// Construct the absolute file path based on the current working directory
 	filePath := filepath.Join(currentDir, "zero_ssl/acme.json")
 
-	sizeThreshold := int64(50 * 1024) // 50 KB in bytes
+	sizeThreshold := int64(50 * 1024) // 50 KB
 
 	return CheckFile(filePath, sizeThreshold)
 }
 
 // CheckFile checks if a file exists, its size, and if it exceeds a certain size threshold.
 func CheckFile(filePath string, sizeThreshold int64) (bool, int64, error) {
-	// Check if the file exists
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, 0, nil // File does not exist
+			return false, 0, nil
 		}
-		return false, 0, err // Error occurred while checking the file
+		return false, 0, err
 	}
 
-	// Check the size of the file
 	fileSize := fileInfo.Size()
 
-	// Check if the file size exceeds the threshold
 	if fileSize > sizeThreshold {
-		return true, fileSize, nil // File exists and meets the size requirement
+		return true, fileSize, nil
 	}
 
-	return false, fileSize, nil // File exists but does not meet the size requirement
+	return false, fileSize, nil
 }
