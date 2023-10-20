@@ -126,7 +126,7 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
-	certReady, _, err := CheckZeroSSL()
+	certReady, err := CheckZeroSSL()
 	if err != nil {
 		log.Printf("tls cert not set: %s \n", err)
 		certReady = false
@@ -195,35 +195,35 @@ func GetDockerPS() ([]DockerContainer, error) {
 	return containers, nil
 }
 
-func CheckZeroSSL() (bool, int64, error) {
+func CheckZeroSSL() (bool, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error getting current working directory: %v\n", err)
-		return false, 0, err
+		return false, err
 	}
 
 	filePath := filepath.Join(currentDir, "zero_ssl/acme.json")
 
 	sizeThreshold := int64(50 * 1024) // 50 KB
 
-	return CheckFile(filePath, sizeThreshold)
+	fileSize, err := getFileSize(filePath)
+	if err != nil {
+		return false, err
+	}
+
+	return fileSize > sizeThreshold, nil
 }
 
 // CheckFile checks if a file exists, its size, and if it exceeds a certain size threshold.
-func CheckFile(filePath string, sizeThreshold int64) (bool, int64, error) {
+func getFileSize(filePath string) (int64, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, 0, nil
+			return 0, nil
 		}
-		return false, 0, err
+		return 0, err
 	}
 
 	fileSize := fileInfo.Size()
-
-	if fileSize > sizeThreshold {
-		return true, fileSize, nil
-	}
-
-	return false, fileSize, nil
+	return fileSize, nil
 }
