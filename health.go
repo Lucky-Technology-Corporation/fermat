@@ -214,7 +214,7 @@ func CheckZeroSSLStatus() (bool, error) {
 	return fileSize > sizeThreshold, nil
 }
 
-// getFileSize checks if a file exists, its size, and if it exceeds a certain size threshold.
+// getFileSize checks if a file exists and it's size. if a file does not exist, return 0 size (not an error)
 func getFileSize(filePath string) (int64, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
