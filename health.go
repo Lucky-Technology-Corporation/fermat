@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -125,7 +126,18 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
-	err = WriteJSONResponse(w, containers)
+	certReady, err := CheckZeroSSLStatus()
+	if err != nil {
+		log.Printf("tls cert not set: %s \n", err)
+		certReady = false
+	}
+
+	currentHealthStatus := VMHealth{
+		Containers: containers,
+		CertReady:  certReady,
+	}
+
+	err = WriteJSONResponse(w, currentHealthStatus)
 	if err != nil {
 		log.Printf("failed to write json response: %s \n", err)
 		http.Error(w, "failed to write json response", http.StatusInternalServerError)
@@ -134,14 +146,19 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 // DockerContainer represents details about a running Docker container
 type DockerContainer struct {
-	ContainerID string
-	Image       string
-	Command     string
-	Created     string
-	Status      string
-	Ports       string
-	Names       string
-	Health      HealthStatus
+	ContainerID string       `json:"container_id"`
+	Image       string       `json:"image"`
+	Command     string       `json:"command"`
+	Created     string       `json:"created"`
+	Status      string       `json:"status"`
+	Ports       string       `json:"ports"`
+	Names       string       `json:"names"`
+	Health      HealthStatus `json:"health"`
+}
+
+type VMHealth struct {
+	Containers []DockerContainer `json:"containers"`
+	CertReady  bool              `json:"cert_ready"`
 }
 
 // GetDockerPS fetches running Docker container details using the "docker ps" command.
@@ -176,4 +193,37 @@ func GetDockerPS() ([]DockerContainer, error) {
 	}
 
 	return containers, nil
+}
+
+func CheckZeroSSLStatus() (bool, error) {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Error getting current working directory: %v\n", err)
+		return false, err
+	}
+
+	filePath := filepath.Join(currentDir, "zero_ssl/acme.json")
+
+	sizeThreshold := int64(50 * 1024) // 50 KB
+
+	fileSize, err := getFileSize(filePath)
+	if err != nil {
+		return false, err
+	}
+
+	return fileSize > sizeThreshold, nil
+}
+
+// getFileSize checks if a file exists and it's size. if a file does not exist, return 0 size (not an error)
+func getFileSize(filePath string) (int64, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	fileSize := fileInfo.Size()
+	return fileSize, nil
 }
