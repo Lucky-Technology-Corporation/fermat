@@ -126,7 +126,7 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
-	certReady, err := CheckZeroSSL()
+	certReady, err := CheckZeroSSLStatus()
 	if err != nil {
 		log.Printf("tls cert not set: %s \n", err)
 		certReady = false
@@ -195,7 +195,7 @@ func GetDockerPS() ([]DockerContainer, error) {
 	return containers, nil
 }
 
-func CheckZeroSSL() (bool, error) {
+func CheckZeroSSLStatus() (bool, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error getting current working directory: %v\n", err)
@@ -214,7 +214,7 @@ func CheckZeroSSL() (bool, error) {
 	return fileSize > sizeThreshold, nil
 }
 
-// CheckFile checks if a file exists, its size, and if it exceeds a certain size threshold.
+// getFileSize checks if a file exists, its size, and if it exceeds a certain size threshold.
 func getFileSize(filePath string) (int64, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
