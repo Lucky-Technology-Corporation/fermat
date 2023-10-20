@@ -88,8 +88,21 @@ func pingHealthStatus(endpoint, apiKey string) {
 		return
 	}
 
+	certReady, err := CheckZeroSSLStatus()
+	if err != nil {
+		log.Printf("tls cert not set: %s \n", err)
+		certReady = false
+	}
+
+	currentHealthStatus := VMHealth{
+		Containers: containers,
+		CertReady:  certReady,
+	}
+
+	fmt.Printf("[HEALTH] pinging euler (%s) with health status: %+v", endpoint, currentHealthStatus)
+
 	// Convert the containers to JSON
-	data, err := json.Marshal(containers)
+	data, err := json.Marshal(currentHealthStatus)
 	if err != nil {
 		fmt.Println("Error marshalling Docker PS data:", err)
 		return
