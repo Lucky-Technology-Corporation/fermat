@@ -49,7 +49,7 @@ func HealthStatusServiceRunner() {
 	interval, err := strconv.Atoi(intervalStr)
 	if err != nil {
 		log.Printf("ERROR: Invalid PING_INTERVAL_SECONDS value (%s). Must be an integer. Using default value.", intervalStr)
-		interval = 60
+		interval = 10
 	}
 
 	endpoint := os.Getenv("HEALTH_CHECK_ENDPOINT_URL")
@@ -99,7 +99,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 		CertReady:  certReady,
 	}
 
-	fmt.Printf("[HEALTH] pinging euler (%s) with health status: %+v", endpoint, currentHealthStatus)
+	fmt.Printf("[HEALTH] pinging euler (%s) with health status: %+v \n", endpoint, currentHealthStatus)
 
 	// Convert the containers to JSON
 	data, err := json.Marshal(currentHealthStatus)
