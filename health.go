@@ -99,8 +99,6 @@ func pingHealthStatus(endpoint, apiKey string) {
 		CertReady:  certReady,
 	}
 
-	fmt.Printf("[HEALTH] pinging euler (%s) with health status: %+v \n", endpoint, currentHealthStatus)
-
 	// Convert the containers to JSON
 	data, err := json.Marshal(currentHealthStatus)
 	if err != nil {
