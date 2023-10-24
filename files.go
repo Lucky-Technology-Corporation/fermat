@@ -138,7 +138,13 @@ func writeFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, err := os.Create(fileRequest.Path) // Create the file (or overwrite if it exists)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		http.Error(w, "Can't get user's home directory", http.StatusInternalServerError)
+		return
+	}
+
+	file, err := os.Create(filepath.Join(home, "code", fileRequest.Path)) // Create the file (or overwrite if it exists)
 	if err != nil {
 		http.Error(w, "Failed to create file", http.StatusInternalServerError)
 		return
