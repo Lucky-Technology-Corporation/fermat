@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -84,7 +85,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 	// Fetch docker ps details
 	containers, err := GetDockerPS()
 	if err != nil {
-		fmt.Println("Error fetching Docker PS data:", err)
+		log.Println("Error fetching Docker PS data:", err)
 		return
 	}
 
@@ -102,14 +103,14 @@ func pingHealthStatus(endpoint, apiKey string) {
 	// Convert the containers to JSON
 	data, err := json.Marshal(currentHealthStatus)
 	if err != nil {
-		fmt.Println("Error marshalling Docker PS data:", err)
+		log.Println("Error marshalling Docker PS data:", err)
 		return
 	}
 
 	// Create the request
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(data))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		log.Println("Error creating request:", err)
 		return
 	}
 
@@ -119,13 +120,23 @@ func pingHealthStatus(endpoint, apiKey string) {
 	// Send the request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
+		log.Println("Error sending request:", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Print the response status for debugging purposes
-	fmt.Println("Response status:", resp.Status)
+	// In case of a non 2xx response from the health endpoint debug print info
+	if resp.StatusCode/100 != 2 {
+		log.Println("Bad response status:", resp.Status)
+
+		// Try reading the body and print any info
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			log.Println("Response body:", string(body))
+		}
+
+	}
+
 }
 
 // HealthServiceHandler is an HTTP handler that responds with the status of Docker containers
