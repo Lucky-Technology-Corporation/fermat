@@ -103,7 +103,7 @@ func setupHTTPServer() error {
 	//Get file contents
 	r.HandleFunc("/code/file_contents", fileContents)
 	//Write file contents
-	r.HandleFunc("/code/write_file", writeFile)
+	r.HandleFunc("/code/write_file", writeCodeFile)
 
 	r.Get("/spoof_jwt", spoofJwt)
 

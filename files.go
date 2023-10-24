@@ -118,21 +118,21 @@ func fileContents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type WriteFileRequest struct {
+type WriteCodeFileRequest struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 }
 
-func writeFile(w http.ResponseWriter, r *http.Request) {
+func writeCodeFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
-	var fileRequest WriteFileRequest
+	var req WriteCodeFileRequest
 
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&fileRequest)
+	err := decoder.Decode(&req)
 	if err != nil {
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
@@ -144,7 +144,7 @@ func writeFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, err := os.Create(filepath.Join(home, "code", fileRequest.Path)) // Create the file (or overwrite if it exists)
+	file, err := os.Create(filepath.Join(home, "code", req.Path)) // Create the file (or overwrite if it exists)
 	if err != nil {
 		http.Error(w, "Failed to create file", http.StatusInternalServerError)
 		return
@@ -155,7 +155,7 @@ func writeFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	_, err = file.WriteString(fileRequest.Content)
+	_, err = file.WriteString(req.Content)
 	if err != nil {
 		http.Error(w, "Failed to write to file", http.StatusInternalServerError)
 		return
