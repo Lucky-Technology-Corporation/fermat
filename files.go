@@ -84,7 +84,8 @@ func deleteFile(w http.ResponseWriter, r *http.Request) {
 
 	err := os.RemoveAll(path)
 	if err != nil {
-		http.Error(w, "Failed to delete file", http.StatusInternalServerError)
+		fmt.Printf(err.Error())
+		http.Error(w, "Failed to delete file "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
