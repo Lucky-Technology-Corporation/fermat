@@ -116,6 +116,7 @@ services:
     restart: unless-stopped
 
   nodemon-server:
+    init: true
     image: node:18
     working_dir: /swizzle/code
     environment:
@@ -146,6 +147,7 @@ services:
     restart: always
 
   frontend:
+    init: true
     image: node:18
     working_dir: /swizzle/code
     environment:
