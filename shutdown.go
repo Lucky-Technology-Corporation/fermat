@@ -27,6 +27,9 @@ func ShutdownHandler(shutdownChan chan bool) func(w http.ResponseWriter, r *http
 		w.WriteHeader(http.StatusOK)
 
 		log.Println("Signaling to shutdown server...")
-		shutdownChan <- true
+
+		go func() {
+			shutdownChan <- true
+		}()
 	}
 }
