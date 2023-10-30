@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -53,11 +55,12 @@ func main() {
 	log.Println("[Step 6] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
+	shutdownChan := make(chan bool, 1)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := setupHTTPServer(); err != nil {
+		if err := setupHTTPServer(shutdownChan); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Failed to start HTTP server: %v", err)
 		}
 		done <- true
@@ -90,7 +93,7 @@ func recoverAndRestart() {
 }
 
 // setupHTTPServer sets up the necessary HTTP routes and starts the server.
-func setupHTTPServer() error {
+func setupHTTPServer(shutdownChan chan bool) error {
 	r := chi.NewRouter()
 	r.Use(corsMiddleware)
 
@@ -128,10 +131,16 @@ func setupHTTPServer() error {
 		w.Write([]byte("Refresh success!"))
 	})
 
-	err := http.ListenAndServe(":1234", r)
-	if err != nil {
-		return err
-	}
+	r.Post("/shutdown", ShutdownHandler(shutdownChan))
 
-	return nil
+	server := &http.Server{Addr: ":1234", Handler: r}
+
+	go func() {
+		<-shutdownChan
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Fatalf("Could not gracefully shutdown server: %v\n", err)
+		}
+	}()
+
+	return server.ListenAndServe()
 }
