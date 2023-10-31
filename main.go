@@ -27,6 +27,9 @@ func main() {
 
 	if firstTimeEnv == "false" {
 		firstTime = false
+		log.Println("[Info] Not first time. Skipping initialization steps.")
+	} else {
+		log.Println("[Info] First time running. Setting everything up.")
 	}
 
 	// We need to make sure we are set to the right service account for downloading
