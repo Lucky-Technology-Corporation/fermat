@@ -219,15 +219,15 @@ func WriteJSONResponseWithHeader(w http.ResponseWriter, statusCode int, data int
 	return nil
 }
 
-func switchToFermatServiceAccount(filter string) error {
-	runner := &CommandRunner{}
-	runner.Run("gcloud", "auth", "list", fmt.Sprintf("--filter=%s", filter), "--format=value(account)")
+func switchApplicationDefaultCredentialsToWebserver() error {
+	runner := &CommandRunner{dir: ".config/gcloud"}
+	runner.Run("cp", WEBSERVER_KEYS_FILE, "application_default_credentials.json")
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", WEBSERVER_KEYS_FILE)
+
 	serviceAccount := runner.output
 	if serviceAccount == "" {
-		return fmt.Errorf("No service account exists matching filter: %s", filter)
+		return fmt.Errorf("Failed to switch over webserver keys: %s", runner.err.Error())
 	}
-
-	runner.Run("gcloud", "config", "set", "account", serviceAccount)
 
 	return runner.err
 }

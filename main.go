@@ -14,6 +14,7 @@ import (
 )
 
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
+const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 
 func main() {
 	defer recoverAndRestart() // If the program panics, this will attempt to restart it.
@@ -30,14 +31,6 @@ func main() {
 		log.Println("[Info] Not first time. Skipping initialization steps.")
 	} else {
 		log.Println("[Info] First time running. Setting everything up.")
-	}
-
-	// We need to make sure we are set to the right service account for downloading
-	if !firstTime {
-		err := switchToFermatServiceAccount("fermat")
-		if err != nil {
-			log.Fatalf("[Error] Couldn't switch to fermat service account: %s", err)
-		}
 	}
 
 	log.Println("[Info] Downloading docker-compose file...")
@@ -74,9 +67,9 @@ func main() {
 
 	// Try switching back to webserver account
 	if !firstTime {
-		err := switchToFermatServiceAccount("webserver")
+		err := switchApplicationDefaultCredentialsToWebserver()
 		if err != nil {
-			log.Println("[Warn] Couldn't find webserver service account. Continuing with fermat service account...")
+			log.Fatalf("[Error] Couldn't switch back to webserver service acccount: %v", err)
 		}
 	}
 

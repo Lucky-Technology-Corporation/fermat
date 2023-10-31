@@ -36,34 +36,31 @@ for cmd in gcloud curl git; do
     fi
 done
 
-if [ "$SNAPSHOT_MODE" = "false" ]; then
-    # Decoding and saving service account credentials
-    SERVICE_ACCOUNT_FILE="$HOME/.config/gcloud/application_default_credentials.json"
-    echo "[INFO] Decoding and saving service account credentials..."
-    echo "$SERVICE_ACCOUNT_JSON_BASE64" | base64 --decode > "$SERVICE_ACCOUNT_FILE"
-    if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Failed to decode and save service account credentials."
-        exit 1
-    fi
-    echo "[SUCCESS] Service account credentials saved to $SERVICE_ACCOUNT_FILE."
+# Decoding and saving service account credentials
+DEFAULT_SERVICE_ACCOUNT_FILE="$HOME/.config/gcloud/application_default_credentials.json"
+FERMAT_SERVICE_ACCOUNT_FILE="$HOME/.config/gcloud/fermat-keys.json"
 
-    # Activating service account for gcloud
-    echo "[INFO] Setting up gcloud auth for service account..."
-    if gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_FILE"; then
-        echo "[SUCCESS] Service account activated successfully."
-    else
-        echo "[ERROR] Failed to activate service account!"
-        exit 1
-    fi
+echo "[INFO] Decoding and saving service account credentials..."
+
+SERVICE_ACCOUNT_JSON=$(echo "$SERVICE_ACCOUNT_JSON_BASE64" | base64 --decode)
+if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Failed to decode service account credentials."
+    exit 1
+fi
+
+echo $SERVICE_ACCOUNT_JSON > "$DEFAULT_SERVICE_ACCOUNT_FILE"
+echo $SERVICE_ACCOUNT_JSON > "$FERMAT_SERVICE_ACCOUNT_FILE"
+
+echo "[SUCCESS] Service account credentials saved to $FERMAT_SERVICE_ACCOUNT_FILE."
+echo "[SUCCESS] Set default account credentials to fermat service account"
+
+# Activating service account for gcloud
+echo "[INFO] Setting up gcloud auth for service account..."
+if gcloud auth activate-service-account --key-file="$FERMAT_SERVICE_ACCOUNT_FILE"; then
+    echo "[SUCCESS] Service account activated successfully."
 else
-    # In snapshot mode we can switch back to
-    FERMAT_ACCOUNT=$(gcloud auth list --filter="fermat" --format="value(account)")
-    if gcloud config set account "$FERMAT_ACCOUNT"; then
-        echo "[SUCCESS] Fermat service account switched to successfully."
-    else
-        echo "[ERROR] Failed to switch to fermat service account!"
-        exit 1
-    fi
+    echo "[ERROR] Failed to activate service account!"
+    exit 1
 fi
 
 # Fetching access token
@@ -118,19 +115,4 @@ if [ "$SNAPSHOT_MODE" = "false" ]; then
         exit 1
     fi
     echo "[SUCCESS] Git email set successfully."
-else
-    # Switch back to customer service account
-    WEBSERVER_ACCOUNT=$(gcloud auth list --filter="webserver" --format="value(account)")
-
-    if [[ -z "$WEBSERVER_ACCOUNT" ]]; then
-        echo "[ERROR] No webserver service account found."
-        exit 1
-    fi
-
-    if gcloud config set account "$WEBSERVER_ACCOUNT"; then
-        echo "[SUCCESS] Webserver service account switched to successfully."
-    else
-        echo "[ERROR] Failed to switch to webserver service account!"
-        exit 1
-    fi
 fi
