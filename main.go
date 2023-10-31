@@ -22,37 +22,62 @@ func main() {
 	log.Println("========================================")
 	log.Println("Initializing fermat...")
 
-	log.Println("[Step 1] Downloading docker-compose file...")
+	firstTime := true
+	firstTimeEnv := os.Getenv("FIRST_TIME")
+
+	if firstTimeEnv == "false" {
+		firstTime = false
+	}
+
+	// We need to make sure we are set to the right service account for downloading
+	if !firstTime {
+		err := switchToFermatServiceAccount("fermat")
+		if err != nil {
+			log.Fatalf("[Error] Couldn't switch to fermat service account: %s", err)
+		}
+	}
+
+	log.Println("[Info] Downloading docker-compose file...")
 	err := downloadFileFromGoogleBucket(os.Getenv("BUCKET_NAME"), "docker-compose.yaml", "docker-compose.yaml")
 	if err != nil {
 		log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
 	}
 
-	log.Println("[Step 2] Authenticating artifact registry...")
-	err = setupArtifactRegistryAuth()
-	if err != nil {
-		log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
+	if firstTime {
+		log.Println("[Info] Authenticating artifact registry...")
+		err = setupArtifactRegistryAuth()
+		if err != nil {
+			log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
+		}
+
+		log.Println("[Info] Setup Mongo Certificate for TLS support...")
+		err = CreateAndSaveMongoCert()
+		if err != nil {
+			log.Fatalf("[Error] Failed to create and save certificate: %v", err)
+		}
+
+		log.Println("[Info] Writing secrets to file...")
+		err = saveInitialSecrets()
+		if err != nil {
+			log.Fatalf("[Error] Failed to save initial secrets: %v", err)
+		}
 	}
 
-	log.Println("[Step 3] Setup Mongo Certificate for TLS support...")
-	err = CreateAndSaveMongoCert()
-	if err != nil {
-		log.Fatalf("[Error] Failed to create and save certificate: %v", err)
-	}
-
-	log.Println("[Step 4] Running docker compose...")
+	log.Println("[Info] Running docker compose...")
 	err = runDockerCompose()
 	if err != nil {
 		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
 	}
 
-	log.Println("[Step 5] Writing secrets to file...")
-	err = saveInitialSecrets()
-	if err != nil {
-		log.Fatalf("[Error] Failed to save initial secrets: %v", err)
+	// Try switching back to webserver account
+	if !firstTime {
+		err := switchToFermatServiceAccount("webserver")
+		if err != nil {
+			log.Println("[Warn] Couldn't find webserver service account. Continuing with fermat service account...")
+		}
 	}
 
-	log.Println("[Step 6] Setting up HTTP server...")
+	log.Println("[Info] Setting up HTTP server...")
 
 	done := make(chan bool, 1)
 	shutdownChan := make(chan bool, 1)

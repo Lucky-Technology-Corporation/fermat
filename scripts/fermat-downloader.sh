@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Whether we're restoring from a snapshot or initializing from scratch
+SNAPSHOT_MODE=false
+
+for arg in "$@"
+do
+    case $arg in
+        --snapshot-mode)
+        SNAPSHOT_MODE=true
+        shift
+        ;;
+        *)
+        shift
+        ;;
+    esac
+done
+
+if [ "$SNAPSHOT_MODE" = "true" ]; then
+    echo "[INFO] Running in snapshot mode..."
+else
+    echo "[INFO] Running in initialization mode..."
+fi
+
 # Ensure environment variables are set
 if [[ -z "$SERVICE_ACCOUNT_JSON_BASE64" || -z "$BUCKET_NAME" || -z "$GCP_PROJECT" ]]; then
     echo "[ERROR] One or more required environment variables (SERVICE_ACCOUNT_JSON_BASE64, BUCKET_NAME, GCP_PROJECT) are missing."
@@ -14,23 +36,34 @@ for cmd in gcloud curl git; do
     fi
 done
 
-# Decoding and saving service account credentials
-SERVICE_ACCOUNT_FILE="$HOME/.config/gcloud/application_default_credentials.json"
-echo "[INFO] Decoding and saving service account credentials..."
-echo "$SERVICE_ACCOUNT_JSON_BASE64" | base64 --decode > "$SERVICE_ACCOUNT_FILE"
-if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Failed to decode and save service account credentials."
-    exit 1
-fi
-echo "[SUCCESS] Service account credentials saved to $SERVICE_ACCOUNT_FILE."
+if [ "$SNAPSHOT_MODE" = "false" ]; then
+    # Decoding and saving service account credentials
+    SERVICE_ACCOUNT_FILE="$HOME/.config/gcloud/application_default_credentials.json"
+    echo "[INFO] Decoding and saving service account credentials..."
+    echo "$SERVICE_ACCOUNT_JSON_BASE64" | base64 --decode > "$SERVICE_ACCOUNT_FILE"
+    if [[ $? -ne 0 ]]; then
+        echo "[ERROR] Failed to decode and save service account credentials."
+        exit 1
+    fi
+    echo "[SUCCESS] Service account credentials saved to $SERVICE_ACCOUNT_FILE."
 
-# Activating service account for gcloud
-echo "[INFO] Setting up gcloud auth for service account..."
-if gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_FILE"; then
-    echo "[SUCCESS] Service account activated successfully."
+    # Activating service account for gcloud
+    echo "[INFO] Setting up gcloud auth for service account..."
+    if gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_FILE"; then
+        echo "[SUCCESS] Service account activated successfully."
+    else
+        echo "[ERROR] Failed to activate service account!"
+        exit 1
+    fi
 else
-    echo "[ERROR] Failed to activate service account!"
-    exit 1
+    # In snapshot mode we can switch back to
+    FERMAT_ACCOUNT=$(gcloud auth list --filter="fermat" --format="value(account)")
+    if gcloud config set account "$FERMAT_ACCOUNT"; then
+        echo "[SUCCESS] Fermat service account switched to successfully."
+    else
+        echo "[ERROR] Failed to switch to fermat service account!"
+        exit 1
+    fi
 fi
 
 # Fetching access token
@@ -55,32 +88,49 @@ else
     exit 1
 fi
 
-# Cloning from Google Cloud Source Repositories
-REPO_DIR="$HOME/code"
-REPO_NAME="swizzle-webserver-template"
-echo "[INFO] Attempting to clone '$REPO_NAME' from Google Cloud Source Repositories..."
-mkdir -p "$REPO_DIR"
-if gcloud source repos clone "$REPO_NAME" "$REPO_DIR" --project="swizzle-prod" --quiet; then
-    echo "[SUCCESS] '$REPO_NAME' has been successfully cloned to $REPO_DIR."
+if [ "$SNAPSHOT_MODE" = "false" ]; then
+    # Cloning from Google Cloud Source Repositories
+    REPO_DIR="$HOME/code"
+    REPO_NAME="swizzle-webserver-template"
+    echo "[INFO] Attempting to clone '$REPO_NAME' from Google Cloud Source Repositories..."
+    mkdir -p "$REPO_DIR"
+    if gcloud source repos clone "$REPO_NAME" "$REPO_DIR" --project="$GCP_PROJECT" --quiet; then
+        echo "[SUCCESS] '$REPO_NAME' has been successfully cloned to $REPO_DIR."
+    else
+        echo "[ERROR] Failed to clone '$REPO_NAME'."
+        exit 1
+    fi
+
+    # Configuring git username
+    gitUsername="${GIT_USERNAME:-Swizzle User}"
+    echo "[INFO] Setting GIT_USERNAME to $gitUsername."
+    if ! git config --global user.name "$gitUsername"; then
+        echo "[ERROR] Error setting git username"
+        exit 1
+    fi
+    echo "[SUCCESS] Git username set successfully."
+
+    # Configuring git email
+    gitEmail="${GIT_EMAIL:-default@swizzle.co}"
+    echo "[INFO] Setting GIT_EMAIL to $gitEmail."
+    if ! git config --global user.email "$gitEmail"; then
+        echo "[ERROR] Error setting git email"
+        exit 1
+    fi
+    echo "[SUCCESS] Git email set successfully."
 else
-    echo "[ERROR] Failed to clone '$REPO_NAME'."
-    exit 1
-fi
+    # Switch back to customer service account
+    WEBSERVER_ACCOUNT=$(gcloud auth list --filter="webserver" --format="value(account)")
 
-# Configuring git username
-gitUsername="${GIT_USERNAME:-Swizzle User}"
-echo "[INFO] Setting GIT_USERNAME to $gitUsername."
-if ! git config --global user.name "$gitUsername"; then
-    echo "[ERROR] Error setting git username"
-    exit 1
-fi
-echo "[SUCCESS] Git username set successfully."
+    if [[ -z "$WEBSERVER_ACCOUNT" ]]; then
+        echo "[ERROR] No webserver service account found."
+        exit 1
+    fi
 
-# Configuring git email
-gitEmail="${GIT_EMAIL:-default@swizzle.co}"
-echo "[INFO] Setting GIT_EMAIL to $gitEmail."
-if ! git config --global user.email "$gitEmail"; then
-    echo "[ERROR] Error setting git email"
-    exit 1
+    if gcloud config set account "$WEBSERVER_ACCOUNT"; then
+        echo "[SUCCESS] Webserver service account switched to successfully."
+    else
+        echo "[ERROR] Failed to switch to webserver service account!"
+        exit 1
+    fi
 fi
-echo "[SUCCESS] Git email set successfully."
