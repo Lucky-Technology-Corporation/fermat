@@ -83,6 +83,7 @@ services:
     restart: always
 
   pascal:
+    init: true
     image: us-central1-docker.pkg.dev/${GCP_PROJECT}/pascal/pascal:latest
     volumes:
       - $HOME/code:/swizzle/code
