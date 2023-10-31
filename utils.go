@@ -218,3 +218,16 @@ func WriteJSONResponseWithHeader(w http.ResponseWriter, statusCode int, data int
 
 	return nil
 }
+
+func switchApplicationDefaultCredentialsToWebserver() error {
+	runner := &CommandRunner{dir: ".config/gcloud"}
+	runner.Run("cp", WEBSERVER_KEYS_FILE, "application_default_credentials.json")
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", WEBSERVER_KEYS_FILE)
+
+	serviceAccount := runner.output
+	if serviceAccount == "" {
+		return fmt.Errorf("Failed to switch over webserver keys: %s", runner.err.Error())
+	}
+
+	return runner.err
+}

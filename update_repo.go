@@ -33,17 +33,25 @@ func updateRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := filepath.Join(home, ".config", "gcloud", "application_default_credentials.json")
+	gcloudDir := filepath.Join(home, ".config", "gcloud")
+	webserverKeysFilePath := filepath.Join(gcloudDir, "webserver-keys.json")
+	adcFilePath := filepath.Join(gcloudDir, "application_default_credentials.json")
 
-	err = os.WriteFile(filePath, credentials, 0644)
+	err = os.WriteFile(webserverKeysFilePath, credentials, 0644)
 	if err != nil {
-		http.Error(w, "Failed to write credentials file", http.StatusInternalServerError)
+		http.Error(w, "Failed to write webserver keys", http.StatusInternalServerError)
+		return
+	}
+
+	err = os.WriteFile(adcFilePath, credentials, 0644)
+	if err != nil {
+		http.Error(w, "Failed to write application default credentials", http.StatusInternalServerError)
 		return
 	}
 
 	runner := &CommandRunner{dir: "code"}
 
-	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", filePath)
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", webserverKeysFilePath)
 	runner.Run("git", "remote", "set-url", "origin", req.GoogleSourceRepo)
 	runner.Run("git", "config", "--replace-all", "credential.https://source.developers.google.com/.helper", "!gcloud auth git-helper --ignore-unknown $@")
 
