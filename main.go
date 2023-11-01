@@ -15,6 +15,7 @@ import (
 
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
+const FEMRAT_KEYS_FILE = "fermat-keys.json"
 
 func main() {
 	defer recoverAndRestart() // If the program panics, this will attempt to restart it.
@@ -141,12 +142,23 @@ func setupHTTPServer(shutdownChan chan bool) error {
 
 	r.Post("/update_repo", updateRepo)
 	r.Post("/refresh", func(w http.ResponseWriter, r *http.Request) {
-		err := runDockerCompose()
+		err := activateServiceAccountKeys(FEMRAT_KEYS_FILE)
+		if err != nil {
+			log.Println("Error:", err)
+			http.Error(w, "Failed to activate fermat service account", http.StatusInternalServerError)
+			return
+		}
+
+		err = runDockerCompose()
 		if err != nil {
 			log.Println("Error:", err)
 			http.Error(w, "Failed to run docker compose", http.StatusInternalServerError)
 			return
 		}
+
+		// In case we're refreshing a project without a production deployment we don't want the refresh
+		// to report a failure since we'd expect this to fail with no webserver keys available.
+		_ = activateServiceAccountKeys(WEBSERVER_KEYS_FILE)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Refresh success!"))

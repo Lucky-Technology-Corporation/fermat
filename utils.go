@@ -231,3 +231,15 @@ func switchApplicationDefaultCredentialsToWebserver() error {
 
 	return runner.err
 }
+
+func activateServiceAccountKeys(keys string) error {
+	runner := &CommandRunner{dir: ".config/gcloud"}
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", keys)
+
+	serviceAccount := runner.output
+	if serviceAccount == "" {
+		return fmt.Errorf("Failed to activate %s service account keys: %s", keys, runner.err.Error())
+	}
+
+	return runner.err
+}
