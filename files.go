@@ -145,7 +145,15 @@ func writeCodeFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, err := os.Create(filepath.Join(home, "code", req.Path)) // Create the file (or overwrite if it exists)
+	path := filepath.Join(home, "code", req.Path)
+
+	err = os.MkdirAll(filepath.Dir(path), 0755)
+	if err != nil {
+		http.Error(w, "Failed to create directories", http.StatusInternalServerError)
+		return
+	}
+
+	file, err := os.Create(path) // Create the file (or overwrite if it exists)
 	if err != nil {
 		http.Error(w, "Failed to create file", http.StatusInternalServerError)
 		return
