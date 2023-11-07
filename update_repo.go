@@ -52,8 +52,8 @@ func updateRepo(w http.ResponseWriter, r *http.Request) {
 	runner := &CommandRunner{dir: "code"}
 
 	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", webserverKeysFilePath)
-	runner.Run("git", "remote", "set-url", "origin", req.GoogleSourceRepo)
-	runner.Run("git", "config", "--replace-all", "credential.https://source.developers.google.com/.helper", "!gcloud auth git-helper --ignore-unknown $@")
+	runner.Run("git", "remote", "add", "origin", req.GoogleSourceRepo)
+	runner.Run("git", "config", "credential.https://source.developers.google.com/.helper", "!gcloud auth git-helper --ignore-unknown $@")
 
 	if runner.err != nil {
 		http.Error(w, runner.err.Error(), http.StatusInternalServerError)

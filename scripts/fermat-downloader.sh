@@ -115,4 +115,22 @@ if [ "$SNAPSHOT_MODE" = "false" ]; then
         exit 1
     fi
     echo "[SUCCESS] Git email set successfully."
+
+    # Delete git history
+    cd "$REPO_DIR"
+
+    if [ -d ".git" ]; then
+        echo "[INFO] Removing existing Git history..."
+        rm -rf .git
+
+        echo "[INFO] Initializing a new Git repository..."
+        git init
+        git add .
+        git commit -m "Initial commit"
+
+        echo "[SUCCESS] New Git history has been initialized in $REPO_DIR."
+    else
+        echo "[ERROR] .git directory not found. Are you sure this is a Git repository?"
+        exit 1
+    fi
 fi
