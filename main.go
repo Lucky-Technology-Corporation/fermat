@@ -70,7 +70,7 @@ func main() {
 	if !firstTime {
 		err := switchApplicationDefaultCredentialsToWebserver()
 		if err != nil {
-			log.Fatalf("[Error] Couldn't switch back to webserver service acccount: %v", err)
+			log.Printf("[Error] Couldn't switch back to webserver service acccount: %v\n", err)
 		}
 	}
 
@@ -165,6 +165,7 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	})
 
 	r.Post("/shutdown", ShutdownHandler(shutdownChan))
+	r.Post("/restart_frontend", restartFrontend)
 
 	server := &http.Server{Addr: ":1234", Handler: r}
 
