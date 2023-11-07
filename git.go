@@ -216,7 +216,7 @@ func pushProduction(w http.ResponseWriter, r *http.Request) {
 	// However, just because master is up-to-date doesn't mean that our release branch is so we should
 	// try doing a push anyways.
 	runner = &CommandRunner{dir: "code"}
-	runner.Run("git", "push", "-o", "nokeycheck", "origin", "master:release")
+	runner.Run("git", "push", "-o", "nokeycheck", "origin", "master:master", "master:release")
 
 	if runner.err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
