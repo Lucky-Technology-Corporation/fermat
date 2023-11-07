@@ -165,7 +165,8 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	})
 
 	r.Post("/shutdown", ShutdownHandler(shutdownChan))
-	r.Post("/restart_frontend", restartFrontend)
+	r.Post("/restart_frontend", restartDockerContainer("frontend"))
+	r.Post("/restart_backend", restartDockerContainer("backend"))
 
 	server := &http.Server{Addr: ":1234", Handler: r}
 
