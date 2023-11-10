@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,7 +33,13 @@ func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dir := filepath.Join("code", path)
+	dir, err := filepath.Abs(filepath.Join("code", path))
+	if err != nil {
+		log.Println("Couldn't convert path to absolute:", err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
 	packageJSON := filepath.Join(dir, "package.json")
 	if !fileExists(packageJSON) {
 		http.Error(w, "The directory: "+dir+" doesn't contain a package.json", http.StatusBadRequest)
@@ -79,7 +86,13 @@ func npmRemoveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dir := filepath.Join("code", path)
+	dir, err := filepath.Abs(filepath.Join("code", path))
+	if err != nil {
+		log.Println("Couldn't convert path to absolute:", err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
 	packageJSON := filepath.Join(dir, "package.json")
 	if !fileExists(packageJSON) {
 		http.Error(w, "The directory: "+dir+" doesn't contain a package.json", http.StatusBadRequest)
@@ -102,7 +115,7 @@ func (runner *CommandRunner) RunDockerNpmCommand(args ...string) {
 		"run", "--rm",
 		"-v", runner.dir + ":/app",
 		"-w", "/app",
-		"node:18", "npm",
+		"node:18-alpine", "npm",
 	}
 
 	dockerArgs = append(dockerArgs, args...)
@@ -117,4 +130,4 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !os.IsNotExist(err)
-args...}
+}

@@ -168,6 +168,10 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	r.Post("/restart_frontend", restartDockerContainer("frontend"))
 	r.Post("/restart_backend", restartDockerContainer("backend"))
 
+	// NPM commands
+	r.Post("/npm/install", npmInstallHandler)
+	r.Post("/npm/remove", npmRemoveHandler)
+
 	server := &http.Server{Addr: ":1234", Handler: r}
 
 	go func() {
