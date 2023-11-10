@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -30,7 +35,45 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := tail.TailFile(tailFile, tail.Config{Follow: true, MustExist: true})
+	numLines := 10
+	initalLines := queryParams.Get("initial_lines")
+	if initalLines != "" {
+		numLines, err = strconv.Atoi(initalLines)
+		if err != nil || numLines < 0 {
+			http.Error(w, "Param inital_lines must be a non-negative integer", http.StatusBadRequest)
+			return
+		}
+	}
+
+	tailFile = filepath.Join("code", tailFile)
+
+	// 1. Try and read intial_lines number lines from the file and send that in the first websocket message.
+	cmd := exec.Command("tail", "-n", strconv.Itoa(numLines), tailFile)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		log.Println("Failed to execute tail command", err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	err = conn.WriteMessage(websocket.TextMessage, out.Bytes())
+	if err != nil {
+		log.Println("Error writing to websocket connection", err)
+		return
+	}
+
+	// 2. Start tailing the file from the end.
+	t, err := tail.TailFile(tailFile, tail.Config{
+		Follow:    true,
+		MustExist: true,
+		Location: &tail.SeekInfo{
+			Whence: os.SEEK_END,
+			Offset: 0,
+		},
+		Logger: tail.DiscardingLogger,
+	})
 	if err != nil {
 		log.Println("Failed to tail logs", err.Error())
 		http.Error(w, "Failed to tail logs", http.StatusInternalServerError)

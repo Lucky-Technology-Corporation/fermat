@@ -24,55 +24,55 @@ func main() {
 	log.Println("========================================")
 	log.Println("Initializing fermat...")
 
-	firstTime := true
-	firstTimeEnv := os.Getenv("FIRST_TIME")
+	// firstTime := true
+	// firstTimeEnv := os.Getenv("FIRST_TIME")
 
-	if firstTimeEnv == "false" {
-		firstTime = false
-		log.Println("[Info] Not first time. Skipping initialization steps.")
-	} else {
-		log.Println("[Info] First time running. Setting everything up.")
-	}
+	// if firstTimeEnv == "false" {
+	// 	firstTime = false
+	// 	log.Println("[Info] Not first time. Skipping initialization steps.")
+	// } else {
+	// 	log.Println("[Info] First time running. Setting everything up.")
+	// }
 
-	log.Println("[Info] Downloading docker-compose file...")
-	err := downloadFileFromGoogleBucket(os.Getenv("BUCKET_NAME"), "docker-compose.yaml", "docker-compose.yaml")
-	if err != nil {
-		log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
-	}
+	// log.Println("[Info] Downloading docker-compose file...")
+	// err := downloadFileFromGoogleBucket(os.Getenv("BUCKET_NAME"), "docker-compose.yaml", "docker-compose.yaml")
+	// if err != nil {
+	// 	log.Fatalf("[Error] Failed to download and save docker-compose file: %s", err)
+	// }
 
-	if firstTime {
-		log.Println("[Info] Authenticating artifact registry...")
-		err = setupArtifactRegistryAuth()
-		if err != nil {
-			log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
-		}
+	// if firstTime {
+	// 	log.Println("[Info] Authenticating artifact registry...")
+	// 	err = setupArtifactRegistryAuth()
+	// 	if err != nil {
+	// 		log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
+	// 	}
 
-		log.Println("[Info] Setup Mongo Certificate for TLS support...")
-		err = CreateAndSaveMongoCert()
-		if err != nil {
-			log.Fatalf("[Error] Failed to create and save certificate: %v", err)
-		}
+	// 	log.Println("[Info] Setup Mongo Certificate for TLS support...")
+	// 	err = CreateAndSaveMongoCert()
+	// 	if err != nil {
+	// 		log.Fatalf("[Error] Failed to create and save certificate: %v", err)
+	// 	}
 
-		log.Println("[Info] Writing secrets to file...")
-		err = saveInitialSecrets()
-		if err != nil {
-			log.Fatalf("[Error] Failed to save initial secrets: %v", err)
-		}
-	}
+	// 	log.Println("[Info] Writing secrets to file...")
+	// 	err = saveInitialSecrets()
+	// 	if err != nil {
+	// 		log.Fatalf("[Error] Failed to save initial secrets: %v", err)
+	// 	}
+	// }
 
-	log.Println("[Info] Running docker compose...")
-	err = runDockerCompose()
-	if err != nil {
-		log.Fatalf("[Error] Failed to run docker-compose: %v", err)
-	}
+	// log.Println("[Info] Running docker compose...")
+	// err = runDockerCompose()
+	// if err != nil {
+	// 	log.Fatalf("[Error] Failed to run docker-compose: %v", err)
+	// }
 
-	// Try switching back to webserver account
-	if !firstTime {
-		err := switchApplicationDefaultCredentialsToWebserver()
-		if err != nil {
-			log.Printf("[Error] Couldn't switch back to webserver service acccount: %v\n", err)
-		}
-	}
+	// // Try switching back to webserver account
+	// if !firstTime {
+	// 	err := switchApplicationDefaultCredentialsToWebserver()
+	// 	if err != nil {
+	// 		log.Printf("[Error] Couldn't switch back to webserver service acccount: %v\n", err)
+	// 	}
+	// }
 
 	log.Println("[Info] Setting up HTTP server...")
 
@@ -89,7 +89,7 @@ func main() {
 	}()
 
 	// Start Health Service Runner
-	go HealthStatusServiceRunner()
+	// go HealthStatusServiceRunner()
 
 	log.Println("========================================")
 	log.Println("Fermat is now running!")
