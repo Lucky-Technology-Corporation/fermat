@@ -9,8 +9,8 @@ import (
 )
 
 type NPMInstallRequest struct {
-	Package string `json:"package"`
-	Save    bool   `json:"save"`
+	Packages []string `json:"packages"`
+	Save     bool     `json:"save"`
 }
 
 func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,8 +20,8 @@ func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Package == "" {
-		http.Error(w, "Package can't be empty", http.StatusBadRequest)
+	if len(req.Packages) == 0 {
+		http.Error(w, "Must specify at least 1 package", http.StatusBadRequest)
 		return
 	}
 
@@ -46,7 +46,8 @@ func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := []string{"install", req.Package}
+	args := []string{"install"}
+	args = append(args, req.Packages...)
 	if req.Save {
 		args = append(args, "--save")
 	}
@@ -63,7 +64,7 @@ func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type NPMRemoveRequest struct {
-	Package string `json:"package"`
+	Packages []string `json:"packages"`
 }
 
 func npmRemoveHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,8 +74,8 @@ func npmRemoveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Package == "" {
-		http.Error(w, "Package can't be empty", http.StatusBadRequest)
+	if len(req.Packages) == 0 {
+		http.Error(w, "Must specify at least 1 package", http.StatusBadRequest)
 		return
 	}
 
@@ -99,8 +100,9 @@ func npmRemoveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	args := append([]string{"remove"}, req.Packages...)
 	runner := &CommandRunner{dir: dir}
-	runner.RunDockerNpmCommand("remove", req.Package)
+	runner.RunDockerNpmCommand(args...)
 	if runner.err != nil {
 		http.Error(w, "Error running command: "+runner.err.Error(), http.StatusInternalServerError)
 		return
