@@ -90,6 +90,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case line := <-t.Lines:
+			log.Println("Log:", line)
 			err := conn.WriteMessage(websocket.TextMessage, []byte(line.Text))
 			if err != nil {
 				log.Println("Error writing to websocket connection", err)
