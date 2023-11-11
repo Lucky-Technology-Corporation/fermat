@@ -20,14 +20,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Failed to upgrade websocket connection", err.Error())
-		http.Error(w, "Failed to upgrade to websocket connection", http.StatusInternalServerError)
-		return
-	}
-	defer conn.Close()
-
+	var err error
 	queryParams := r.URL.Query()
 	tailFile := queryParams.Get("path")
 	if !strings.HasSuffix(tailFile, ".log") {
@@ -58,6 +51,13 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Failed to upgrade websocket connection", err.Error())
+		return
+	}
+	defer conn.Close()
+
 	err = conn.WriteMessage(websocket.TextMessage, out.Bytes())
 	if err != nil {
 		log.Println("Error writing to websocket connection", err)
@@ -76,7 +76,6 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Println("Failed to tail logs", err.Error())
-		http.Error(w, "Failed to tail logs", http.StatusInternalServerError)
 		return
 	}
 	defer t.Stop()
