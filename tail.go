@@ -14,9 +14,14 @@ import (
 	"github.com/hpcloud/tail"
 )
 
+// TODO: Don't allow all origins in production
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		// Allow all origins
+		return true
+	},
 }
 
 func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
