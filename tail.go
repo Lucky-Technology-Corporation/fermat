@@ -64,8 +64,6 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log.Println("Connected to:", conn.RemoteAddr().String())
-
 	err = conn.WriteMessage(websocket.TextMessage, out.Bytes())
 	if err != nil {
 		log.Println("Error writing to websocket connection", err)
@@ -81,7 +79,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			Whence: os.SEEK_END,
 			Offset: 0,
 		},
-		// Logger: tail.DiscardingLogger,
+		Logger: tail.DiscardingLogger,
 	})
 	if err != nil {
 		log.Println("Failed to tail logs", err.Error())
@@ -90,25 +88,27 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	defer t.Stop()
 
 	clientClosed := r.Context().Done()
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+
+	// Ping every 60 seconds checking for dead connection
+	pinger := time.NewTicker(60 * time.Second)
+	defer pinger.Stop()
 
 	for {
 		select {
 		case line := <-t.Lines:
 			log.Println(conn.RemoteAddr().String(), ":", line.Text)
-			err := conn.WriteMessage(websocket.TextMessage, []byte(line.Text))
-			if err != nil {
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(line.Text)); err != nil {
 				log.Println("Error writing to websocket connection", err)
 				return
 			}
 		case <-clientClosed:
 			// Client closed connection
-			log.Println("Closed connection:", conn.RemoteAddr().String())
 			return
-		case <-ticker.C:
-			log.Println(conn.RemoteAddr().String(), ":", "Tick...")
+		case <-pinger.C:
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Println("Failed ping:", err.Error())
+				return
+			}
 		}
-
 	}
 }
