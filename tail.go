@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hpcloud/tail"
@@ -88,6 +89,8 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	defer t.Stop()
 
 	clientClosed := r.Context().Done()
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -102,6 +105,9 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			// Client closed connection
 			log.Println("Closed connection:", conn.RemoteAddr().String())
 			return
+		case <-ticker.C:
+			log.Println(conn.RemoteAddr().String(), ":", "Tick...")
 		}
+
 	}
 }
