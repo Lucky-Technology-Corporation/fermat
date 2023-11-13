@@ -165,8 +165,14 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	})
 
 	r.Post("/shutdown", ShutdownHandler(shutdownChan))
-	r.Post("/restart_frontend", restartDockerContainer("frontend"))
-	r.Post("/restart_backend", restartDockerContainer("backend"))
+	r.Post("/restart_frontend", restartDockerContainerHandler("frontend"))
+	r.Post("/restart_backend", restartDockerContainerHandler("backend"))
+
+	// NPM commands
+	r.Post("/npm/install", npmInstallHandler)
+	r.Post("/npm/remove", npmRemoveHandler)
+
+	r.Get("/tail_logs", tailLogsHandler)
 
 	server := &http.Server{Addr: ":1234", Handler: r}
 
