@@ -96,7 +96,6 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case line := <-t.Lines:
-			log.Println(conn.RemoteAddr().String(), ":", line.Text)
 			if err := conn.WriteMessage(websocket.TextMessage, []byte(line.Text)); err != nil {
 				log.Println("Error writing to websocket connection", err)
 				return
@@ -106,7 +105,6 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		case <-pinger.C:
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Println("Failed ping:", err.Error())
 				return
 			}
 		}
