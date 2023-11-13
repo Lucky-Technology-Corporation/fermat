@@ -76,6 +76,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	t, err := tail.TailFile(tailFile, tail.Config{
 		Follow:    true,
 		MustExist: true,
+		Poll:      true,
 		Location: &tail.SeekInfo{
 			Whence: os.SEEK_END,
 			Offset: 0,
