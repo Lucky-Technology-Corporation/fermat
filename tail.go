@@ -63,6 +63,8 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	log.Println("Connected to:", conn.RemoteAddr().String())
+
 	err = conn.WriteMessage(websocket.TextMessage, out.Bytes())
 	if err != nil {
 		log.Println("Error writing to websocket connection", err)
@@ -90,7 +92,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case line := <-t.Lines:
-			log.Println("Log:", line)
+			log.Println(conn.RemoteAddr().String(), ":", line.Text)
 			err := conn.WriteMessage(websocket.TextMessage, []byte(line.Text))
 			if err != nil {
 				log.Println("Error writing to websocket connection", err)
@@ -98,6 +100,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		case <-clientClosed:
 			// Client closed connection
+			log.Println("Closed connection:", conn.RemoteAddr().String())
 			return
 		}
 	}
