@@ -79,7 +79,7 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			Whence: os.SEEK_END,
 			Offset: 0,
 		},
-		Logger: tail.DiscardingLogger,
+		// Logger: tail.DiscardingLogger,
 	})
 	if err != nil {
 		log.Println("Failed to tail logs", err.Error())
