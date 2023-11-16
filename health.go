@@ -98,6 +98,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 	currentHealthStatus := VMHealth{
 		Containers: containers,
 		CertReady:  certReady,
+		Version:    VERSION,
 	}
 
 	// Convert the containers to JSON
