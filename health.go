@@ -157,6 +157,7 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 	currentHealthStatus := VMHealth{
 		Containers: containers,
 		CertReady:  certReady,
+		Version:    VERSION,
 	}
 
 	err = WriteJSONResponse(w, currentHealthStatus)
@@ -181,6 +182,7 @@ type DockerContainer struct {
 type VMHealth struct {
 	Containers []DockerContainer `json:"containers"`
 	CertReady  bool              `json:"cert_ready"`
+	Version    string            `json:"version"`
 }
 
 // GetDockerPS fetches running Docker container details using the "docker ps" command.

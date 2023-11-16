@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+const VERSION = "0.0.1"
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 const FEMRAT_KEYS_FILE = "fermat-keys.json"
@@ -23,6 +24,7 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.Println("========================================")
 	log.Println("Initializing fermat...")
+	log.Println("Running version: " + VERSION)
 
 	firstTime := true
 	firstTimeEnv := os.Getenv("FIRST_TIME")
@@ -131,6 +133,10 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	r.HandleFunc("/code/write_file", writeCodeFile)
 
 	r.Get("/spoof_jwt", spoofJwt)
+	r.Get("/version", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(VERSION))
+	})
 
 	r.HandleFunc("/commit", commitHandler)
 	r.Post("/push_to_production", pushProduction)
