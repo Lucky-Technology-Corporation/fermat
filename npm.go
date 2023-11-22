@@ -10,8 +10,9 @@ import (
 )
 
 type NPMInstallRequest struct {
-	Packages []string `json:"packages"`
-	Save     bool     `json:"save"`
+	Packages      []string `json:"packages"`
+	Save          bool     `json:"save"`
+	ExtraArgument string   `json:"extra_argument"`
 }
 
 func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +40,9 @@ func npmInstallHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	args := []string{"install"}
+	if req.ExtraArgument != "" {
+		args = append(args, "--legacy-peer-deps")
+	}
 	args = append(args, req.Packages...)
 	if req.Save {
 		args = append(args, "--save")
