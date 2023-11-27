@@ -85,7 +85,10 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to tail logs", err.Error())
 		return
 	}
-	defer t.Stop()
+	defer func() {
+		t.Stop()
+		t.Cleanup()
+	}()
 
 	clientClosed := r.Context().Done()
 
