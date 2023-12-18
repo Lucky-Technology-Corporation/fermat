@@ -1,12 +1,20 @@
 steps:
   # Set up Go environment and build the Go application
-  - name: 'golang:1.21'
-    entrypoint: 'bash'
-    args: ['-c', 'GOOS=linux GOARCH=amd64 go build -o fermat-linux .']
+  - name: "golang:1.21"
+    entrypoint: "bash"
+    args: ["-c", "GOOS=linux GOARCH=amd64 go build -o fermat-linux ."]
 
   # Upload the built application, docker-compose file, and mongo init script to a Google Cloud Storage bucket
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'fermat-linux', './scripts/docker-compose.yaml', './scripts/mongo-init.js',  'gs://swizzle_scripts_$_PROFILE']
+  - name: "gcr.io/cloud-builders/gsutil"
+    args:
+      [
+        "cp",
+        "fermat-linux",
+        "./scripts/docker-compose.yaml",
+        "./scripts/mongo-init.js",
+        "./scripts/setup-mounts.sh",
+        "gs://swizzle_scripts_$_PROFILE",
+      ]
     id: upload
 tags:
   - fermat
