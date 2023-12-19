@@ -13,6 +13,8 @@ steps:
         "./scripts/docker-compose.yaml",
         "./scripts/mongo-init.js",
         "./scripts/setup-mounts.sh",
+        "./scripts/fermat-downloader.sh",
+        "./scripts/download-starter-code.sh",
         "gs://swizzle_scripts_$_PROFILE",
       ]
     id: upload
