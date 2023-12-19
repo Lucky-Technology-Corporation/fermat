@@ -38,12 +38,12 @@ if [ -z "$mongo_mnt" ]; then
     fi
 fi
 
+swizzle_home=/home/swizzle
 home_mnt=$(findmnt -n -o TARGET --source $home_dev)
 
 # If home has not been auto-mounted then we need to give to temporarily mount it.
 if [ -z "$home_mnt" ]; then
     home_mnt=/mnt/swizzlehome
-    swizzle_home=/home/swizzle
     echo "[INFO] Home directory is not mounted. Mounting to temporary location at $home_mnt..."
 
     mkdir -p $home_mnt
