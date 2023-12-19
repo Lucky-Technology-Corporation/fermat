@@ -57,7 +57,7 @@ if [ -z "$home_mnt" ]; then
 fi
 
 echo [INFO] "Syncing current home directory to remote..."
-rsync -av $swizzle_home/ $home_mnt/
+rsync -a $swizzle_home/ $home_mnt/
 if [ $? -eq 0 ]; then
     echo "[SUCCESS] Synced! Now deleting all files in the home directory..."
 else
