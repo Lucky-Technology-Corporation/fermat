@@ -1,9 +1,12 @@
 #!/bin/bash
 
-if [ -z "$MONGO_VOLUME_NAME" ]; then
-    echo "[ERROR] MONGO_VOLUME_NAME variable must be set."
+# Take in the MONGO_VOLUME_NAME as the first argument
+if [ -z "$1" ]; then
+    echo "[ERROR] No argument provided. MONGO_VOLUME_NAME variable must be set."
     exit 1
 fi
+
+MONGO_VOLUME_NAME="$1"
 
 mongo_dev_name=$(lsblk -o NAME,LABEL | grep mongodata | awk '{print $1}')
 if [ -z "$mongo_dev_name" ]; then
