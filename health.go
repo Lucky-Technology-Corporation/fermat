@@ -70,6 +70,8 @@ func HealthStatusServiceRunner() {
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
+	// Ping once right away
+	pingHealthStatus(endpoint, apiKey)
 	for {
 		select {
 		case <-ticker.C:
