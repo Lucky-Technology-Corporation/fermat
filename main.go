@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const VERSION = "0.0.6"
+const VERSION = "0.0.7"
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 const FEMRAT_KEYS_FILE = "fermat-keys.json"
@@ -25,6 +25,12 @@ func main() {
 	log.Println("========================================")
 	log.Println("Initializing fermat...")
 	log.Println("Running version: " + VERSION)
+
+	// No matter what, we need to have the fermat SA activated whether this is a first time boot
+	// or it's restarting.
+	if err := switchGoogleCredentialsToFermat(); err != nil {
+		log.Printf("[Error] Couldn't set google credentials to fermat service acccount: %v\n", err)
+	}
 
 	firstTime := true
 	firstTimeEnv := os.Getenv("FIRST_TIME")
@@ -70,7 +76,7 @@ func main() {
 
 	// Try switching back to webserver account
 	if !firstTime {
-		err := switchApplicationDefaultCredentialsToWebserver()
+		err := switchGoogleCredentialsToWebserver()
 		if err != nil {
 			log.Printf("[Error] Couldn't switch back to webserver service acccount: %v\n", err)
 		}

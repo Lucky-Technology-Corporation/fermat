@@ -219,7 +219,7 @@ func WriteJSONResponseWithHeader(w http.ResponseWriter, statusCode int, data int
 	return nil
 }
 
-func switchApplicationDefaultCredentialsToWebserver() error {
+func switchGoogleCredentialsToWebserver() error {
 	runner := &CommandRunner{dir: ".config/gcloud"}
 	runner.Run("cp", WEBSERVER_KEYS_FILE, "application_default_credentials.json")
 	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", WEBSERVER_KEYS_FILE)
@@ -227,6 +227,19 @@ func switchApplicationDefaultCredentialsToWebserver() error {
 	serviceAccount := runner.output
 	if serviceAccount == "" {
 		return fmt.Errorf("Failed to switch over webserver keys: %s", runner.err.Error())
+	}
+
+	return runner.err
+}
+
+func switchGoogleCredentialsToFermat() error {
+	runner := &CommandRunner{dir: ".config/gcloud"}
+	runner.Run("cp", FEMRAT_KEYS_FILE, "application_default_credentials.json")
+	runner.Run("gcloud", "auth", "activate-service-account", "--key-file", FEMRAT_KEYS_FILE)
+
+	serviceAccount := runner.output
+	if serviceAccount == "" {
+		return fmt.Errorf("Failed to switch over fermat keys: %s", runner.err.Error())
 	}
 
 	return runner.err

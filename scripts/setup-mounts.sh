@@ -44,6 +44,11 @@ fi
 swizzle_home=/home/swizzle
 home_mnt=$(findmnt -n -o TARGET --source $home_dev)
 
+if [ "$home_mnt" = "$swizzle_home" ]; then
+    echo "[SUCCESS] Home directory is already mounted at $home_mnt. No syncing required."
+    exit 0
+fi
+
 # If home has not been auto-mounted then we need to give to temporarily mount it.
 if [ -z "$home_mnt" ]; then
     home_mnt=/mnt/swizzlehome
