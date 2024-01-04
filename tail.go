@@ -66,11 +66,17 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	closeReceived := make(chan struct{})
 	go func() {
+		defer close(closeReceived)
+
 		for {
-			messageType, _, _ := conn.ReadMessage()
+			messageType, _, err := conn.ReadMessage()
+
+			if err != nil {
+				log.Println("Error reading from websocket connection", err)
+				break
+			}
+
 			if messageType == websocket.CloseMessage {
-				close(closeReceived)
-				conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				break
 			}
 		}
@@ -123,6 +129,10 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case <-closeReceived:
+			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				log.Println("Error writing to websocket connection", err)
+			}
 			return
 		}
 	}
