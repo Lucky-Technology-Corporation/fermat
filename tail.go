@@ -64,6 +64,18 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	closeReceived := make(chan struct{})
+	go func() {
+		for {
+			messageType, _, _ := conn.ReadMessage()
+			if messageType == websocket.CloseMessage {
+				close(closeReceived)
+				conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				break
+			}
+		}
+	}()
+
 	err = conn.WriteMessage(websocket.TextMessage, out.Bytes())
 	if err != nil {
 		log.Println("Error writing to websocket connection", err)
@@ -110,6 +122,8 @@ func tailLogsHandler(w http.ResponseWriter, r *http.Request) {
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
+		case <-closeReceived:
+			return
 		}
 	}
 }
