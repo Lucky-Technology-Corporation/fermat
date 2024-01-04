@@ -66,10 +66,19 @@ func getFileList(w http.ResponseWriter, r *http.Request) {
 
 	root := filepath.Join(home, "code"+filePathFromQueryString)
 	result, err := listDir(root)
+
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to list directory: %s", err), http.StatusInternalServerError)
-		return
+		//directory may not exist, return empty directory instead of an error
+		fmt.Printf("Failed to list directory: %s", err)
+
+		result = &File{
+			Name:     "helpers",
+			Path:     root,
+			IsDir:    true,
+			Children: []*File{},
+		}
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
