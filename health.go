@@ -4,13 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -91,15 +89,9 @@ func pingHealthStatus(endpoint, apiKey string) {
 		return
 	}
 
-	certReady, err := CheckZeroSSLStatus()
-	if err != nil {
-		log.Printf("tls cert not set: %s \n", err)
-		certReady = false
-	}
-
 	currentHealthStatus := VMHealth{
 		Containers: containers,
-		CertReady:  certReady,
+		CertReady:  true,
 		Version:    VERSION,
 	}
 
@@ -137,9 +129,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 		if err == nil {
 			log.Println("Response body:", string(body))
 		}
-
 	}
-
 }
 
 // HealthServiceHandler is an HTTP handler that responds with the status of Docker containers
@@ -151,15 +141,9 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
-	certReady, err := CheckZeroSSLStatus()
-	if err != nil {
-		log.Printf("tls cert not set: %s \n", err)
-		certReady = false
-	}
-
 	currentHealthStatus := VMHealth{
 		Containers: containers,
-		CertReady:  certReady,
+		CertReady:  true,
 		Version:    VERSION,
 	}
 
@@ -220,37 +204,4 @@ func GetDockerPS() ([]DockerContainer, error) {
 	}
 
 	return containers, nil
-}
-
-func CheckZeroSSLStatus() (bool, error) {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("Error getting current working directory: %v\n", err)
-		return false, err
-	}
-
-	filePath := filepath.Join(currentDir, "zero_ssl/acme.json")
-
-	sizeThreshold := int64(50 * 1024) // 50 KB
-
-	fileSize, err := getFileSize(filePath)
-	if err != nil {
-		return false, err
-	}
-
-	return fileSize > sizeThreshold, nil
-}
-
-// getFileSize checks if a file exists and it's size. if a file does not exist, return 0 size (not an error)
-func getFileSize(filePath string) (int64, error) {
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return 0, nil
-		}
-		return 0, err
-	}
-
-	fileSize := fileInfo.Size()
-	return fileSize, nil
 }
