@@ -37,7 +37,8 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
-    ports: ["4411:4411"]
+    ports:
+      - "4411:4411"
     restart: always
 
   frontend:
@@ -55,7 +56,8 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
-    ports: ["4545:4545"]
+    ports:
+      - "4545:4545"
     restart: always
 
   mongo:
