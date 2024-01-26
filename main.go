@@ -55,12 +55,6 @@ func main() {
 			log.Fatalf("[Error] Failed to authenticate with the artifact registry: %v", err)
 		}
 
-		log.Println("[Info] Setup Mongo Certificate for TLS support...")
-		err = CreateAndSaveMongoCert()
-		if err != nil {
-			log.Fatalf("[Error] Failed to create and save certificate: %v", err)
-		}
-
 		log.Println("[Info] Writing secrets to file...")
 		err = saveInitialSecrets()
 		if err != nil {
