@@ -56,11 +56,12 @@ func runDockerCompose() error {
 		// need to avoid the issue where the docker cache grows unbounded in size. This can quickly lead
 		// to a problem where "docker compose up -d" will exit with a "No space left on device" error.
 		// This command should be fast if nothing needs to be reclaimed making it fine to run everytime we
-		// do a stop/start.
-		{"docker", "system", "prune", "-f"},
+		// do a stop/start. IMPORTANT: the prune MUST be run AFTER the containers are started otherwise
+		// more than expected will be pruned.
 		{"docker", "compose", "down"},
 		{"docker", "compose", "pull"},
 		{"docker", "compose", "up", "-d"},
+		{"docker", "system", "prune", "-f"},
 	}
 
 	for _, cmdArgs := range commands {
