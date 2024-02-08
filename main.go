@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const VERSION = "0.0.10"
+const VERSION = "0.0.11"
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 const FEMRAT_KEYS_FILE = "fermat-keys.json"
@@ -92,6 +92,12 @@ func main() {
 
 	// Start Health Service Runner
 	go HealthStatusServiceRunner()
+
+	// Prune old docker images. It's important that this is run AFTER the health service gets started so that
+	// we can report up and running without having to wait on this command completing.
+	if err = runDockerSystemPrune(); err != nil {
+		log.Printf("[Error] Failed to run 'docker system prune -f': %v", err)
+	}
 
 	log.Println("========================================")
 	log.Println("Fermat is now running!")

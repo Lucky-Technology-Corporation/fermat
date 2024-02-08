@@ -52,15 +52,38 @@ func runDockerCompose() error {
 	defer logFile.Close()
 
 	commands := [][]string{
+		{"docker", "compose", "down"},
+		{"docker", "compose", "pull"},
+		{"docker", "compose", "up", "-d"},
+	}
+
+	for _, cmdArgs := range commands {
+		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// runDockerSystemPrune runs `docker system prune -f` and logs the output to docker_compose_fermat.log
+func runDockerSystemPrune() error {
+	logFile, err := os.OpenFile("docker_compose_fermat.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+
+	commands := [][]string{
 		// Primary purpose here is to remove dangling images. As new versions of pascal are released, we
 		// need to avoid the issue where the docker cache grows unbounded in size. This can quickly lead
 		// to a problem where "docker compose up -d" will exit with a "No space left on device" error.
 		// This command should be fast if nothing needs to be reclaimed making it fine to run everytime we
 		// do a stop/start. IMPORTANT: the prune MUST be run AFTER the containers are started otherwise
 		// more than expected will be pruned.
-		{"docker", "compose", "down"},
-		{"docker", "compose", "pull"},
-		{"docker", "compose", "up", "-d"},
 		{"docker", "system", "prune", "-f"},
 	}
 
