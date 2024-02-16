@@ -20,7 +20,7 @@ services:
 
   backend:
     init: true
-    image: node:18
+    image: node:18.19.0
     working_dir: /swizzle/code
     environment:
       SWIZZLE_SUPER_SECRET: ${SWIZZLE_SUPER_SECRET}
@@ -43,7 +43,7 @@ services:
 
   frontend:
     init: true
-    image: node:18
+    image: node:18.19.0
     working_dir: /swizzle/code
     environment:
       PORT: 4545
