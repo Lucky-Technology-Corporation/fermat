@@ -184,6 +184,58 @@ func writeCodeFile(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func writeAnyFile(w http.ResponseWriter, r *http.Request) {
+	// Max upload of 10 MB files
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("upload")
+	if err != nil {
+		log.Printf("Failed to extract file from multipart form: %v\n", err)
+		http.Error(w, "Invalid file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	dirPath := r.URL.Query().Get("dir")
+	if dirPath == "" {
+		dirPath = filepath.Join("frontend", "public")
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		http.Error(w, "Can't get user's home directory", http.StatusInternalServerError)
+		return
+	}
+
+	path := filepath.Join(home, "code", dirPath, filepath.Base(handler.Filename))
+	err = os.MkdirAll(filepath.Dir(path), 0755)
+	if err != nil {
+		http.Error(w, "Failed to create directories", http.StatusInternalServerError)
+		return
+	}
+
+	dst, err := os.Create(path)
+	if err != nil {
+		http.Error(w, "Failed to create file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		http.Error(w, "Failed to write to file", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("File uploaded successfully!"))
+	return
+}
+
 func packageJSONReact(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Not Found", http.StatusNotFound)

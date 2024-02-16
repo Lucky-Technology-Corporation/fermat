@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const VERSION = "0.0.11"
+const VERSION = "0.0.12"
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 const FEMRAT_KEYS_FILE = "fermat-keys.json"
@@ -137,6 +137,8 @@ func setupHTTPServer(shutdownChan chan bool) error {
 	r.HandleFunc("/code/file_contents", fileContents)
 	//Write file contents
 	r.HandleFunc("/code/write_file", writeCodeFile)
+	// For arbitrary file content such as videos or images
+	r.Post("/code/upload", writeAnyFile)
 
 	r.Get("/spoof_jwt", spoofJwt)
 	r.Get("/version", func(w http.ResponseWriter, r *http.Request) {
