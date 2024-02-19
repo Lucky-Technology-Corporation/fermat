@@ -137,7 +137,7 @@ func pingHealthStatus(endpoint, apiKey string) {
 func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 	containers, err := GetDockerPS()
 	if err != nil {
-		log.Printf("failed to run docker ps: %s \n", err)
+		log.Printf("failed to run docker ps: %v", err)
 		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
 	}
 
@@ -149,7 +149,7 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = WriteJSONResponse(w, currentHealthStatus)
 	if err != nil {
-		log.Printf("failed to write json response: %s \n", err)
+		log.Printf("failed to write json response: %v", err)
 		http.Error(w, "failed to write json response", http.StatusInternalServerError)
 	}
 }

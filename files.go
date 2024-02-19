@@ -69,7 +69,7 @@ func getFileList(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		//directory may not exist, return empty directory instead of an error
-		fmt.Printf("Failed to list directory: %s", err)
+		log.Printf("Failed to list directory: %v", err)
 
 		result = &File{
 			Name:     "helpers",
@@ -194,7 +194,7 @@ func writeAnyFile(w http.ResponseWriter, r *http.Request) {
 
 	file, handler, err := r.FormFile("upload")
 	if err != nil {
-		log.Printf("Failed to extract file from multipart form: %v\n", err)
+		log.Printf("Failed to extract file from multipart form: %v", err)
 		http.Error(w, "Invalid file", http.StatusBadRequest)
 		return
 	}

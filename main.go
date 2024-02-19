@@ -29,7 +29,7 @@ func main() {
 	// No matter what, we need to have the fermat SA activated whether this is a first time boot
 	// or it's restarting.
 	if err := switchGoogleCredentialsToFermat(); err != nil {
-		log.Printf("[Error] Couldn't set google credentials to fermat service acccount: %v\n", err)
+		log.Printf("[Error] Couldn't set google credentials to fermat service acccount: %v", err)
 	}
 
 	firstTime := true
@@ -72,7 +72,7 @@ func main() {
 	if !firstTime {
 		err := switchGoogleCredentialsToWebserver()
 		if err != nil {
-			log.Printf("[Error] Couldn't switch back to webserver service acccount: %v\n", err)
+			log.Printf("[Error] Couldn't switch back to webserver service acccount: %v", err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func main() {
 	case <-done:
 		log.Println("Server finished.")
 	case sig := <-signals:
-		log.Printf("Received signal %s. Shutting down gracefully...\n", sig)
+		log.Printf("Received signal %s. Shutting down gracefully...", sig)
 	}
 
 	log.Println("Shutdown complete!")

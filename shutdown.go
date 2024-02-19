@@ -25,7 +25,7 @@ func ShutdownHandler(shutdownChan chan bool) func(w http.ResponseWriter, r *http
 		runner.Run("git", "push", "-o", "nokeycheck", "origin", "master")
 
 		if runner.err != nil {
-			log.Printf("Failed running git commands on shutdown: %v\n", runner.err)
+			log.Printf("Failed running git commands on shutdown: %v", runner.err)
 		}
 
 		w.WriteHeader(http.StatusOK)
