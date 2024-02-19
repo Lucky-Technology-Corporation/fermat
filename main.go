@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const VERSION = "0.0.13"
+const VERSION = "0.0.14"
 const SECRETS_FILE_PATH = "code/backend/secrets.json"
 const WEBSERVER_KEYS_FILE = "webserver-keys.json"
 const FEMRAT_KEYS_FILE = "fermat-keys.json"
