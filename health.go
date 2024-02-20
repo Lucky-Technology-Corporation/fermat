@@ -229,7 +229,7 @@ func ReachableThroughDomain() (bool, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		log.Printf("Fermat not reachable with status: %s", resp.Status)
+		log.Printf("[Warn] Fermat not reachable with status: %s", resp.Status)
 		return false, nil
 	}
 
