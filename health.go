@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -65,16 +67,16 @@ func HealthStatusServiceRunner() {
 
 	log.Printf("Starting periodic health service with an interval of %d seconds.", interval)
 
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	defer ticker.Stop()
-
-	// Ping once right away
-	pingHealthStatus(endpoint, apiKey)
+	// We ping the health check following an exponential backoff capping at PING_INTERVAL_SECONDS. So, if PING_INTERVAL_SECONDS
+	// is 60 seconds, then we would: ping immediately, sleep 1 second, ping, sleep 2 seconds, ping, sleep 4, 8, 16, 32, 60 and
+	// continue pingin every 60 seconds. This lets us on first boot be fast about reporting healthy status while over time not
+	// over burdening Euler with too frequent pinging.
+	currentDelay := 1
 	for {
-		select {
-		case <-ticker.C:
-			pingHealthStatus(endpoint, apiKey)
-		}
+		pingHealthStatus(endpoint, apiKey)
+		time.Sleep(time.Duration(currentDelay) * time.Second)
+
+		currentDelay = int(math.Min(float64(interval), float64(currentDelay)*2))
 	}
 }
 
@@ -82,17 +84,10 @@ func HealthStatusServiceRunner() {
 // It constructs the POST request, sets appropriate headers and sends the request.
 // Any issues encountered during the process are logged.
 func pingHealthStatus(endpoint, apiKey string) {
-	// Fetch docker ps details
-	containers, err := GetDockerPS()
+	currentHealthStatus, err := getHealthStatus()
 	if err != nil {
-		log.Println("Error fetching Docker PS data:", err)
+		log.Printf("Error getting health status: %v", err)
 		return
-	}
-
-	currentHealthStatus := VMHealth{
-		Containers: containers,
-		CertReady:  true,
-		Version:    VERSION,
 	}
 
 	// Convert the containers to JSON
@@ -135,16 +130,10 @@ func pingHealthStatus(endpoint, apiKey string) {
 // HealthServiceHandler is an HTTP handler that responds with the status of Docker containers
 // running on the system in JSON format.
 func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
-	containers, err := GetDockerPS()
+	currentHealthStatus, err := getHealthStatus()
 	if err != nil {
-		log.Printf("failed to run docker ps: %v", err)
-		http.Error(w, "failed to run docker ps", http.StatusInternalServerError)
-	}
-
-	currentHealthStatus := VMHealth{
-		Containers: containers,
-		CertReady:  true,
-		Version:    VERSION,
+		log.Printf("Error getting health status: %v", err)
+		return
 	}
 
 	err = WriteJSONResponse(w, currentHealthStatus)
@@ -152,6 +141,24 @@ func HealthServiceHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to write json response: %v", err)
 		http.Error(w, "failed to write json response", http.StatusInternalServerError)
 	}
+}
+
+func getHealthStatus() (*VMHealth, error) {
+	containers, err := GetDockerPS()
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching docker ps data: %w", err)
+	}
+
+	reachable, err := ReachableThroughDomain()
+	if err != nil {
+		return nil, fmt.Errorf("failed to reach self through domain: %w", err)
+	}
+
+	return &VMHealth{
+		Containers: containers,
+		CertReady:  reachable,
+		Version:    VERSION,
+	}, nil
 }
 
 // DockerContainer represents details about a running Docker container
@@ -204,4 +211,27 @@ func GetDockerPS() ([]DockerContainer, error) {
 	}
 
 	return containers, nil
+}
+
+func ReachableThroughDomain() (bool, error) {
+	url := fmt.Sprintf("https://fermat.%s.%s/version", os.Getenv("SWIZZLE_PROJECT_NAME"), os.Getenv("DOMAIN"))
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("X-Api-Key", os.Getenv("API_KEY"))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		log.Printf("Fermat not reachable with status: %s", resp.Status)
+		return false, nil
+	}
+
+	return true, nil
 }
